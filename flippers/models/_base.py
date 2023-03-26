@@ -11,9 +11,9 @@ class _WeakLabelInfo:
 
     def __init__(
         self,
-        polarities: Union[List, np.array],
-        cardinality: Optional[int] = None,
-        names: Optional[List] = None,
+        polarities: Union[np.ndarray, List],
+        cardinality: int = 0,
+        names: List = [],
     ):
         """
         Parameters
@@ -85,9 +85,9 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
     def __init__(
         self,
-        polarities: Union[List, np.array],
-        cardinality: Optional[int] = None,
-        names: Optional[List] = None,
+        polarities: Union[List, np.ndarray],
+        cardinality: int = 0,
+        names: List = [],
     ):
         """
         Parameters
@@ -103,11 +103,6 @@ class _BaseModel(_WeakLabelInfo, ABC):
         """
         ABC.__init__(self)
         _WeakLabelInfo.__init__(self, polarities, cardinality, names)
-
-    @abstractmethod
-    def fit(self, *args) -> None:
-        """Fit the model."""
-        pass
 
     @abstractmethod
     def predict_proba(self, L: pd.DataFrame) -> np.ndarray:

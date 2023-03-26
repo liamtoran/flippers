@@ -7,7 +7,7 @@ name = "flippers"
 description = 'Flippers is a weak supervision library for creating high quality labels using your domain kownledge and other weak supervision sources.'
 readme = "README.md"
 requires-python = ">=3.7"
-license = "MIT"
+license = "Apache-2.0"
 keywords = []
 authors = [
   { name = "liam.toran", email = "liam.toran@gmail.com" },
@@ -34,6 +34,8 @@ Source = "https://github.com/liamtoran/flippers"
 [tool.hatch.version]
 path = "flippers/__about__.py"
 
+# Coverage
+
 [tool.hatch.envs.default]
 dependencies = [
   "pytest",
@@ -43,15 +45,52 @@ dependencies = [
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=flippers --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
 
-[[tool.hatch.envs.test.matrix]]
-python = ["37", "38", "39", "310", "311"]
-
 [tool.coverage.run]
 branch = true
 parallel = true
 omit = [
   "flippers/__about__.py",
 ]
+
+# Linting and ruff
+
+[tool.hatch.envs.lint]
+description = "Check and lint the codebase."
+dependencies = [
+  "pre-commit",
+  "pre-commit-hooks",
+  "docformatter",
+  "isort",
+  "black[jupyter]",
+  "ruff",
+]
+
+[tool.hatch.envs.lint.scripts]
+run = [
+  "black .",
+  "isort .",
+  "docformatter .",
+  "ruff .",
+]
+
+
+# mypy checks
+
+[tool.hatch.envs.type]
+description = "Type check the codebase."
+dependencies = [
+  "mypy",
+  # Dependencies
+  "types-appdirs", "importlib_metadata", "types-Pillow", "sixelcrop",
+  "pandas-stubs",
+  # Optional dependencies
+  "rich", "black", "isort",
+  # Non-dependencies
+  "html2text", "sympy"
+]
+
+[tool.hatch.envs.type.scripts]
+run = "mypy {args:--namespace-packages -p flippers}"
 
 [tool.coverage.report]
 exclude_lines = [
