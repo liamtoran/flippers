@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flippers"
-description = 'Flippers is a weak supervision library for creating high quality labels using your domain kownledge and other weak supervision sources.'
+description = 'Flippers is a weak supervision library for creating high quality labels using your domain kownledge and weak supervision sources.'
 readme = "README.md"
 requires-python = ">=3.7"
 license = "Apache-2.0"
 keywords = []
 authors = [
-  { name = "liam.toran", email = "liam.toran@gmail.com" },
+  { name = "Liam Toran", email = "liam.toran@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -23,7 +23,10 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["numpy", "pandas"]
+dependencies = [
+  "numpy",
+  "pandas"
+]
 dynamic = ["version"]
 
 [project.urls]

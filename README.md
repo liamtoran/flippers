@@ -4,6 +4,8 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/liamtoran/flippers)
 ![GitHub](https://img.shields.io/github/license/liamtoran/flippers)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flippers)
+![Read the Docs](https://img.shields.io/readthedocs/flippers)
+![GitHub](https://img.shields.io/github/license/liamtoran/flippers)
 
 Flippers is a  weak supervision library for efficient and accurate data labeling and training.
 
