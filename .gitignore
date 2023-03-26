@@ -1,3 +1,6 @@
+# Junk
+*Untitled*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -70,6 +73,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+*flippers*.rst
 
 # PyBuilder
 target/
