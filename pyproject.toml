@@ -72,7 +72,7 @@ dependencies = [
 run = [
   "black .",
   "isort .",
-  "docformatter .",
+  "docformatter -i -r .",
   "ruff .",
 ]
 

@@ -1,3 +1,5 @@
+"""Groups basic generative models."""
+
 import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
@@ -5,79 +7,7 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 
-
-class _WeakLabelInfo:
-    """Collects information about the weak labelers."""
-
-    def __init__(
-        self,
-        polarities: Union[np.ndarray, List],
-        cardinality: int = 0,
-        names: List = [],
-    ):
-        """
-        Parameters
-        ----------
-        polarities
-            List that maps weak labels to polarities.
-        cardinality
-            Number of classes
-
-            If not specified, it will be inferred from the maximum value in polarities.
-        names
-            List of names for the different weak labels.
-        """
-        # Set polarities
-        if isinstance(polarities, list):
-            self.polarities = np.array(polarities)
-        elif isinstance(polarities, np.ndarray):
-            self.polarities = polarities
-        else:
-            ValueError("Input polaritiy is not a list or NumPy array")
-
-        # Set cardinality
-        if not cardinality:
-            # Infer the number of categories from the maximum value of polarities
-            cardinality = max(self.polarities) + 1
-            print(f"No cardinality given, assuming it is equal to {cardinality}")
-        self.cardinality = cardinality
-
-        # Set names
-        if not names:
-            names = [f"weak_label_{i}" for i in range(len(self.polarities))]
-        self.names = names
-
-        # Validate inputs work
-        self.__validate_init__()
-
-        self.polarities_matrix = self._polarities_to_matrix()
-
-    def __validate_init__(self):
-        """Assert whether the input data is valid."""
-        # Check more than one class
-        assert self.cardinality > 1
-
-        # Check no polarities outside of cardinality
-        assert self.polarities.max() <= self.cardinality - 1
-        assert self.polarities.min() >= 0
-
-        # Check names is the same size as polarities
-        assert len(self.names) == len(self.polarities)
-
-    def _polarities_to_matrix(self):
-        """Convert polarities to a binary matrix.
-
-        Returns
-        -------
-            Binary matrix of shape (n_weak, cardinality) where:
-
-            mask[i,j] = polarity[i] == j
-        """
-        # Use broadcasting to create a boolean mask of the elements that
-        # match each possible value of polarities
-        mask = self.polarities[:, np.newaxis] == np.arange(self.cardinality)
-
-        return mask
+from .._core import _WeakLabelInfo
 
 
 class _BaseModel(_WeakLabelInfo, ABC):
@@ -118,7 +48,6 @@ class _BaseModel(_WeakLabelInfo, ABC):
         Returns
         -------
             Array of predicted probabilities of shape (len(L), cardinality)
-
         """
         pass
 
@@ -204,7 +133,8 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
 
 class Voter(_BaseModel):
-    """Basic model that bases its decisions on the sum of votes for each class."""
+    """Basic model that bases its decisions on the sum of votes for each
+    class."""
 
     def fit(self) -> None:
         """Voter model does not require fitting."""
@@ -221,7 +151,6 @@ class Voter(_BaseModel):
         Returns
         -------
             Array of predicted probabilities of shape (len(L), cardinality)
-
         """
 
         votes = self._get_votes(L)
@@ -230,10 +159,11 @@ class Voter(_BaseModel):
 
 
 class BalancedVoter(_BaseModel):
-    """Basic model that bases its decisions on a weighted sum of votes for each class.
+    """Basic model that bases its decisions on a weighted sum of votes for each
+    class.
 
-    The weights are computed during fitting so the sum of votes over training matches
-    the given class balance.
+    The weights are computed during fitting so the sum of votes over
+    training matches the given class balance.
     """
 
     def fit(
