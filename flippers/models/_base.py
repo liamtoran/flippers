@@ -2,12 +2,11 @@
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
 
 import numpy as np
-import pandas as pd
 
 from .._core import _WeakLabelInfo
+from .._typing import ListLike, MatrixLike
 
 
 class _BaseModel(_WeakLabelInfo, ABC):
@@ -15,9 +14,9 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
     def __init__(
         self,
-        polarities: Union[List, np.ndarray],
+        polarities: ListLike,
         cardinality: int = 0,
-        names: List = [],
+        names: ListLike = [],
     ):
         """
         Parameters
@@ -35,7 +34,7 @@ class _BaseModel(_WeakLabelInfo, ABC):
         _WeakLabelInfo.__init__(self, polarities, cardinality, names)
 
     @abstractmethod
-    def predict_proba(self, L: pd.DataFrame) -> np.ndarray:
+    def predict_proba(self, L: MatrixLike) -> np.ndarray:
         """Predict probabilites for the given weak label matrix.
 
         Parameters
@@ -51,7 +50,7 @@ class _BaseModel(_WeakLabelInfo, ABC):
         """
         pass
 
-    def predict(self, L: pd.DataFrame, strategy: str = "majority") -> np.ndarray:
+    def predict(self, L: MatrixLike, strategy: str = "majority") -> np.ndarray:
         """Predict labels for the given weak label matrix using the specified
         strategy.
 
@@ -70,7 +69,7 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
             - probability: Predict label j with probability proba[i, j].
 
-              This can be useful to enforce specific balances in the predictions.
+              This can be useful to enforce specific class_balances in the predictions.
 
             Default is "majority".
 
@@ -98,11 +97,11 @@ class _BaseModel(_WeakLabelInfo, ABC):
             )
             predictions = np.where(unlabeled, -1, predictions)
         else:
-            raise ValueError("strategy should be majority or probability")
+            raise ValueError('strategy should be "majority" or "probability"')
 
         return predictions
 
-    def _get_votes(self, L: pd.DataFrame) -> np.ndarray:
+    def _get_votes(self, L: MatrixLike) -> np.ndarray:
         """Compute the sum of votes for each label based on the given weak
         label matrix.
 
@@ -120,7 +119,8 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
             Shape: (n_samples, n_classes)
         """
-        votes = L.values @ self.polarities_matrix
+        L = np.array(L)
+        votes = L @ self.polarities_matrix
         return votes
 
     def _normalize_preds(self, preds: np.ndarray) -> np.ndarray:
@@ -140,7 +140,7 @@ class Voter(_BaseModel):
         """Voter model does not require fitting."""
         warnings.warn("Voter object does not need to be fitted", category=UserWarning)
 
-    def predict_proba(self, L: pd.DataFrame) -> np.ndarray:
+    def predict_proba(self, L: MatrixLike) -> np.ndarray:
         """Predict probabilities using sum of votes.
 
         Parameters
@@ -166,26 +166,23 @@ class BalancedVoter(_BaseModel):
     training matches the given class balance.
     """
 
-    def fit(
-        self, L: pd.DataFrame, balances: Optional[Union[List, np.ndarray]] = None
-    ) -> None:
+    def fit(self, L: MatrixLike, class_balances: ListLike = []) -> None:
         """Fit the BalancedMajorityVoter model.
 
         Parameters
         ----------
         L
             Weak label dataframe.
-        balances
+        class_balances
             Numpy array of shape cardinality giving a weight to each class.
 
             By default, assumes all classes are equally likely.
         """
-        if balances is None:
-            balances = np.ones(self.cardinality)
-        elif isinstance(balances, list):
-            balances = np.array(balances)
-        self.balances = balances
-        self.normalized_balances = self.balances / self.balances.sum()
+        if not class_balances:
+            class_balances = np.ones(self.cardinality)
+        class_balances = np.array(class_balances)
+        self.class_balances = class_balances
+        self.normalized_class_balances = self.class_balances / self.class_balances.sum()
 
         # Learn votes weights per class
         # vote weights is the factor that will reweigh the predicted probabilites
@@ -207,11 +204,11 @@ class BalancedVoter(_BaseModel):
                     ),
                     UserWarning,
                 )
-            votes_mean[no_votes] = self.normalized_balances[no_votes]
-        votes_weights = self.normalized_balances / votes_mean
+            votes_mean[no_votes] = self.normalized_class_balances[no_votes]
+        votes_weights = self.normalized_class_balances / votes_mean
         self.votes_weights = votes_weights
 
-    def predict_proba(self, L: pd.DataFrame) -> np.ndarray:
+    def predict_proba(self, L: MatrixLike) -> np.ndarray:
         """Predict probabilites using weighted voting.
 
         Parameters

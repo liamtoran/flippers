@@ -1,6 +1,0 @@
-sphinx
-numpydoc
-nbsphinx
-sphinx_argparse_cli
-sphinx_copybutton
-pydata_sphinx_theme

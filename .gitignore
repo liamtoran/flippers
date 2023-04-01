@@ -1,6 +1,12 @@
 # Junk
 *Untitled*
 
+# Data
+*.json
+*.csv
+*.txt
+*.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

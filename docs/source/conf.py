@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 # Import the theme and set it as the default
 
-project = "Flippers"
+project = "flippers"
 copyright = f"2023 - {datetime.now().year}, Liam Toran"
 author = "Liam Toran"
 release = "alpha"
@@ -37,19 +37,30 @@ autosectionlabel_prefix_document = True
 autosummary_imported_members = True
 autosummary_generate = True
 autosummary_recursive = True
+
 autodoc_typehints = "description"
 autoclass_content = "both"
+autodoc_mock_imports = ["torch", "tqdm", "_base.py", "_core.py"]
 autodoc_default_options = {
     "members": True,
     "inherited-members": True,
     "show-inheritance": True,
     "member-order": "bysource",
-    # "special-members": "__init__",
+    "special-members": "*predict, *predict_proba, *save, *load",
     "exclude-members": "__weakref__",
 }
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = "pydata_sphinx_theme"
+html_static_path = ["_static"]
+html_css_files = [
+    "custom.css",
+]
+html_sidebars = {
+    "**": ["search-field.html", "sidebar-nav-bs.html", "sidebar-ethical-ads.html"]
+}
+html_theme_options = {
+    "github_url": "https://github.com/liamtoran/flippers",
+}

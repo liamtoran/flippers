@@ -4,14 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flippers"
-description = 'Flippers is a weak supervision library for creating high quality labels using your domain kownledge and weak supervision sources.'
+description = '`flippers` is a weak supervision library for creating high quality labels using your domain kownledge and weak supervision sources.'
 readme = "README.md"
 requires-python = ">=3.7"
 license = "Apache-2.0"
 keywords = []
-authors = [
-  { name = "Liam Toran", email = "liam.toran@gmail.com" },
-]
+authors = [{ name = "Liam Toran", email = "liam.toran@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -23,10 +21,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = [
-  "numpy",
-  "pandas"
-]
+dependencies = ["numpy", "pandas"]
 dynamic = ["version"]
 
 [project.urls]
@@ -40,10 +35,7 @@ path = "flippers/__about__.py"
 # Coverage
 
 [tool.hatch.envs.default]
-dependencies = [
-  "pytest",
-  "pytest-cov",
-]
+dependencies = ["pytest", "pytest-cov"]
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=flippers --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
@@ -51,9 +43,7 @@ no-cov = "cov --no-cov {args}"
 [tool.coverage.run]
 branch = true
 parallel = true
-omit = [
-  "flippers/__about__.py",
-]
+omit = ["flippers/__about__.py"]
 
 # Linting and ruff
 
@@ -69,12 +59,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.lint.scripts]
-run = [
-  "black .",
-  "isort .",
-  "docformatter -i -r .",
-  "ruff .",
-]
+run = ["black .", "isort .", "docformatter -i -r .", "ruff ."]
 
 
 # mypy checks
@@ -84,23 +69,30 @@ description = "Type check the codebase."
 dependencies = [
   "mypy",
   # Dependencies
-  "types-appdirs", "importlib_metadata", "types-Pillow", "sixelcrop",
+  "types-appdirs",
+  "importlib_metadata",
+  "types-Pillow",
+  "sixelcrop",
   "pandas-stubs",
   # Optional dependencies
-  "rich", "black", "isort",
+  "rich",
+  "black",
+  "isort",
+  "types-tqdm",
   # Non-dependencies
-  "html2text", "sympy"
+  "html2text",
+  "sympy",
 ]
+
+[tool.mypy]
+allow_redefinition = true
+ignore_missing_imports = true
 
 [tool.hatch.envs.type.scripts]
 run = "mypy {args:--namespace-packages -p flippers}"
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 
 [tool.ruff]
