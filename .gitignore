@@ -4,7 +4,7 @@
 # Data
 *.json
 *.csv
-*.txt
+datasets*
 *.zip
 
 # Byte-compiled / optimized / DLL files
