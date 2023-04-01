@@ -1,8 +1,9 @@
 # flippers - A Weak Supervision Library 
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/liamtoran/flippers)
-![GitHub](https://img.shields.io/github/license/liamtoran/flippers)
+![PyPI](https://img.shields.io/pypi/v/flippers)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flippers)
+![Code Style](https://img.shields.io/badge/code%20style-black-black)
 ![Read the Docs](https://img.shields.io/readthedocs/flippers)
 ![GitHub](https://img.shields.io/github/license/liamtoran/flippers)
 
@@ -40,7 +41,7 @@ label_model = flippers.models.SnorkelModel(polarities)
 
 label_model.fit(L_train, class_balances)
 
-label_model.predict_proba(L, strategy="all")
+label_model.predict_proba(L, prior_update="all")
 ```
 
 # Discussion
