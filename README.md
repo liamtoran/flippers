@@ -30,18 +30,16 @@ To quickly get started with `flippers`, you can begin by exploring the [document
 ## Example
 - Analyzing your labeling functions:
 ```python
-import flippers
-
 analysis = flippers.analyis(L_train)
 ```
 - Training a Label Model and doing inference:
 
 ```python
-label_model = flippers.models.SnorkelModel(polarities)
+label_model = flippers.models.SnorkelModel(polarities,  class_balances)
 
-label_model.fit(L_train, class_balances)
+label_model.fit(L_train)
 
-label_model.predict_proba(L, prior_update="all")
+label_model.predict_proba(L)
 ```
 
 # Discussion
