@@ -8,7 +8,19 @@ description = '`flippers` is a weak supervision library for creating high qualit
 readme = "README.md"
 requires-python = ">=3.7"
 license = "Apache-2.0"
-keywords = []
+keywords = [
+  "weak supervision",
+  "data labeling",
+  "data science",
+  "machine learning",
+  "data engineering",
+  "data analysis",
+  "data wrangling",
+  "data cleaning",
+  "data preparation",
+  "data augmentation",
+  "data",
+]
 authors = [{ name = "Liam Toran", email = "liam.toran@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -18,8 +30,6 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = ["numpy", "pandas", "matplotlib", "scikit-learn", "tqdm"]
 dynamic = ["version"]
