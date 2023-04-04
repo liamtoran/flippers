@@ -1,7 +1,4 @@
-"""Implements the snorkel library label model.
-
-See (link library)
-"""
+"""Implements the snorkel library label model."""
 
 
 import numpy as np
@@ -20,14 +17,15 @@ class SnorkelModel(nn.Module, _BaseModel):
 
     This implementation is based on the Snorkel library's label model.
 
-    Like its snorkel library counterpart assumes
-    that the labeling functions are independent,
-    similar to a naive Bayes assumption.
+    Like its snorkel library counterpart assumes that the labeling
+    functions are independent conditionally to Y, similar to a naive
+    Bayes assumption.
 
-    However, good results can also be observed in practice for correlated LFs.
+    However, good results can also be observed in practice for
+    correlated LFs.
 
-    See the following link[] for more information on how to use this model and
-    a comparison with the Snorkel library's implementation.
+    See the following link[] for more information on how to use this
+    model and a comparison with the Snorkel library's implementation.
     """
 
     def __init__(
@@ -47,17 +45,20 @@ class SnorkelModel(nn.Module, _BaseModel):
         nn.Module.__init__(self)
         _BaseModel.__init__(self, polarities, cardinality, names)
 
-        self.Polarities = torch.Tensor(self.polarities_matrix)
+        self.Polarities = nn.Parameter(
+            torch.Tensor(self.polarities_matrix), requires_grad=False
+        )
+
         if not class_balances:
             class_balances = 1 / self.cardinality * np.ones(self.cardinality)
         self.class_balances = class_balances
-        self.Balances = torch.Tensor(class_balances)
+        self.Balances = nn.Parameter(torch.Tensor(class_balances), requires_grad=False)
 
     def _convert_L(self, L: MatrixLike) -> torch.Tensor:
         """Convert input L to binary tensor."""
         L = np.array(L)
-        L = (L > 0.5).astype(float)
-        L = torch.tensor(L)
+        L = L > 0.5
+        L = torch.tensor(L).to(torch.float)
         return L
 
     def fit(
@@ -67,30 +68,58 @@ class SnorkelModel(nn.Module, _BaseModel):
         num_epochs: int = 100,
         prec_init: float = 0.7,
         weight_decay: float = 0,
-        mu_init_l2_penalty: float = 0,
+        k: int = 0,
+        device: str = "cpu",
+        verbose: bool = False,
+        *_,
     ) -> None:
-        """Train the Snorkel model."""
+        """Train the Snorkel model on the given weak label matrix L.
+
+        Parameters
+        ----------
+        L : MatrixLike
+            Weak Label matrix of shape (num_samples, n_weak)
+        learning_rate : float, optional, default: 1e-3
+            Learning rate for the optimizer.
+        num_epochs : int, optional, default: 100
+            Number of epochs to train the model
+        prec_init : float, optional, default: 0.7
+            Initial value for precision
+
+            Can be of shape (n_weak) to set precision for each LF.
+        weight_decay : float, optional, default: 0
+            Weight decay (L2 penalty) for the optimizer
+        k : int, optional, default: 0
+            Weight of prediction loss term in the loss function
+        device : str, optional, default: "cpu"
+            Device to use for training, either "cpu" or "cuda"
+        verbose : bool, optional, default: False
+            If True, displays training progress
+
+        Returns
+        -------
+        None
+        """
+        self.to(device)
+
         self.num_samples = len(L)
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.loss_history = []
 
-        # Convert to tensor astype float
-        self.mu_init_l2_penalty = mu_init_l2_penalty
-        self.L2 = mu_init_l2_penalty * torch.ones(self.n_weak)
-
         # Deal with multiple types
         self.prec_init = prec_init
-        self.Prec_init = torch.ones(self.n_weak) * prec_init
+        self.Prec_init = torch.ones(self.n_weak).to(device) * prec_init
 
         # Convert L to binary tensor
         L = self._convert_L(L)
+        L = L.to(device)
 
         # Gram matrix of L gives overlaps
         Overlaps = L.T @ L / self.num_samples
         Coverage = torch.diag(Overlaps)  # Overlaps with itself = coverage
-        self.Coverage = Coverage
+        Overlaps, Coverage = Overlaps.to(device), Coverage.to(device)
 
         # mu(i, j) = P(L_i = 1 | Y = j)
         # Bayes theorem
@@ -105,15 +134,21 @@ class SnorkelModel(nn.Module, _BaseModel):
         mask = mask.bool()
 
         optimizer = optim.SGD(
-            self.parameters(),
+            [x for x in self.parameters() if x.requires_grad],
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
             momentum=0,
         )
 
-        for epoch in trange(self.num_epochs):
+        if verbose:
+            epoch_range = trange(self.num_epochs)
+        else:
+            epoch_range = range(self.num_epochs)
+
+        for epoch in epoch_range:
             # Zero the gradients
             optimizer.zero_grad()
+            self.mu.data = self.mu.clamp(1e-6, 1 - 1e-6)
 
             # Forward
             # Calculate loss
@@ -127,11 +162,12 @@ class SnorkelModel(nn.Module, _BaseModel):
             # the input weak labeler.
             loss_coverage = torch.norm(self.mu @ self.Balances - Coverage)
 
-            loss_mu_init_l2 = torch.norm(
-                self.mu_init_l2_penalty * (self.mu - self.mu_init)
-            )
-
-            loss = loss_overlap**2 + loss_coverage**2 + loss_mu_init_l2**2
+            loss = loss_overlap**2 + loss_coverage**2
+            if k > 0:
+                loss_prediction = torch.norm(
+                    self.Balances - self._predict_proba_tensor(L).mean(0)
+                )
+                loss = loss + k * loss_prediction**2
 
             # Backward
             loss.backward()
@@ -152,8 +188,24 @@ class SnorkelModel(nn.Module, _BaseModel):
 
         # Eval mode so predict_proba doesnt calculate gradients
         self.eval()
+        self.to("cpu")
 
-    def predict_proba(self, L: MatrixLike, prior_update: str = "all") -> np.ndarray:
+    def _predict_proba_tensor(
+        self, L: torch.tensor, ignore_abstains: bool = False
+    ) -> torch.tensor:
+        # Computing trick :
+        # exp(L @ log(mu))[i, k] = Product of mu[j, k] for j / L[i, j] = 1
+        Log_likelihood = L @ self.mu.log()
+        if not ignore_abstains:
+            # Include likelihood of abstains
+            Log_likelihood = Log_likelihood + ((1 - L) @ (1 - self.mu).log())
+
+        # Update prior
+        Proba = Log_likelihood.exp() * self.Balances
+        Proba = Proba / Proba.sum(1).view(-1, 1)
+        return Proba
+
+    def predict_proba(self, L: MatrixLike, ignore_abstains: bool = False) -> np.ndarray:
         """Predicts the probabilities of the classes by updating the prior
         using the learned parameter mu as posteriors.
 
@@ -161,11 +213,10 @@ class SnorkelModel(nn.Module, _BaseModel):
         ----------
         L : MatrixLike
             Weak Label matrix
-        prior_update : str, optional
-            Prior update method. There are two options:
-            - "all" (default): updates using both votes and abstains.
-            - "ignore_abstains": updates using only votes and ignores abstains.
-
+        ignore_abstains : bool, optional
+            Whether to ignore abstains in the prior update:
+            - True, updates prior only using non abstained votes
+            - False (default), using both votes and abstains.
 
         Returns
         -------
@@ -173,28 +224,10 @@ class SnorkelModel(nn.Module, _BaseModel):
             An array of predicted probabilities of shape (num_samples, num_classes).
         """
         L = self._convert_L(L).float()
-        mu = self.mu.cpu().detach().float()
 
-        # Computing trick :
-        # exp(L @ log(mu))[i, k] = Product of mu[j, k] for j / L[i, j] = 1
         with torch.no_grad():
-            if prior_update == "all":
-                # This assumes the labeling functions are independent
-                # Which is most likely not respected in real world use
-                Likelihood_votes = (L @ mu.log()).exp()
-                Likelihood_abstains = ((1 - L) @ (1 - mu).log()).exp()
-
-                # Update prior
-                Proba = (Likelihood_votes * Likelihood_abstains) * self.Balances
-            elif prior_update == "ignore_abstains":
-                # This is the prior_update used by the Snorkel library's label model
-                # It does not count abstains or in the prior update
-                Likelihood_votes = (L @ mu.log()).exp()
-                Proba = Likelihood_votes * self.Balances
+            Proba = self._predict_proba_tensor(L, ignore_abstains)
 
         proba = Proba.detach().cpu().numpy()
-
-        # Normalize the outputs row wise so they sum to one.
-        proba = self._normalize_preds(proba)
 
         return proba

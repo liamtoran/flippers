@@ -21,7 +21,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["numpy", "pandas"]
+dependencies = ["numpy", "pandas", "matplotlib", "scikit-learn", "tqdm"]
 dynamic = ["version"]
 
 [project.urls]
@@ -32,13 +32,21 @@ Source = "https://github.com/liamtoran/flippers"
 [tool.hatch.version]
 path = "flippers/__about__.py"
 
-# Coverage
-
 [tool.hatch.envs.default]
-dependencies = ["pytest", "pytest-cov"]
+dependencies = [
+  "pre-commit",
+  "pre-commit-hooks",
+  "docformatter",
+  "black[jupyter]",
+  "isort",
+  "jupyterlab",
+  "ray[tune]",
+  "snorkel",
+  "jupyterlab-code-formatter",
+  "ruff",
+]
 [tool.hatch.envs.default.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=flippers --cov=tests {args}"
-no-cov = "cov --no-cov {args}"
+
 
 [tool.coverage.run]
 branch = true
@@ -67,6 +75,8 @@ run = ["black .", "isort .", "docformatter -i -r .", "ruff ."]
 [tool.hatch.envs.type]
 description = "Type check the codebase."
 dependencies = [
+  "pytest",
+  "pytest-cov",
   "mypy",
   # Dependencies
   "types-appdirs",
@@ -83,6 +93,8 @@ dependencies = [
   "html2text",
   "sympy",
 ]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=flippers --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
 
 [tool.mypy]
 allow_redefinition = true
@@ -94,6 +106,21 @@ run = "mypy {args:--namespace-packages -p flippers}"
 [tool.coverage.report]
 exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
+[tool.hatch.envs.docs]
+description = "Build the documentation."
+dependencies = [
+  "sphinx",
+  "nbsphinx",
+  "sphinx_argparse_cli",
+  "sphinx_copybutton",
+  "pydata_sphinx_theme",
+]
+
+[tool.hatch.envs.docs.scripts]
+clean = "bpwd; cd docs; ./Make.bat clean"
 
 [tool.ruff]
 line-length = 88
+
+[tool.isort]
+profile = "black"
