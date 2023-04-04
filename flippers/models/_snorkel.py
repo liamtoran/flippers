@@ -90,7 +90,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         weight_decay : float, optional, default: 0
             Weight decay (L2 penalty) for the optimizer
         k : int, optional, default: 0
-            Weight of prediction loss term in the loss function
+            Weight of class blance loss term
         device : str, optional, default: "cpu"
             Device to use for training, either "cpu" or "cuda"
         verbose : bool, optional, default: False

@@ -256,11 +256,12 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Dat
         DataFrame of shape (n_samples, n_weak) where the (i, j)-th element represents
         the number of weak labels assigned to i that have an overlap with L[i,j].
     """
-    L = pd.DataFrame(L)
+    L_pd = pd.DataFrame(L)
+    L = np.array(L)
 
     mask = _WeakLabelInfo(polarities).overlap_matrix
     match_overlap = L @ mask * L - L
-    all_overlap = L.values.sum(axis=1).reshape(-1, 1) * L - L
+    all_overlap = L.sum(axis=1).reshape(-1, 1) * L - L
     if sign == "match":
         overlap = match_overlap
     if sign == "all":
@@ -272,6 +273,7 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Dat
     overlap = overlap.sum(axis=0)
     overlap = overlap / len(L)
 
+    overlap = pd.Series(overlap, index=L_pd.columns)
     return overlap  # type: ignore
 
 
