@@ -186,8 +186,8 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
 
 
 def total_coverage(L: pd.DataFrame) -> float:
-    """
-    Calculate the total proportion of labeled samples in the given label matrix.
+    """Calculate the total proportion of labeled samples in the given label
+    matrix.
 
     Parameters
     ----------

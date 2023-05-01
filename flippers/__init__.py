@@ -6,6 +6,7 @@ from ._core._core import (
     multipolar_to_monopolar,
     overlaps,
     summary,
+    total_coverage,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "multipolar_to_monopolar",
     "overlaps",
     "summary",
+    "total_coverage",
 ]
