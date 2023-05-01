@@ -10,20 +10,17 @@ from .._typing import ListLike, MatrixLike
 class _WeakLabelInfo:
     """Collects information about the weak labelers."""
 
-    def __init__(
-        self, polarities: ListLike, cardinality: int = 0, names: ListLike = []
-    ):
+    def __init__(self, polarities: ListLike, cardinality: int = 0):
         """
         Parameters
         ----------
         polarities
             List that maps weak labels to polarities.
-        cardinality
+        cardinality: int, optional
             Number of classes
 
             If not specified, it will be inferred from the maximum value in polarities.
-        names
-            List of names for the different weak labels.
+
         """
         # Set polarities
         if isinstance(polarities, list):
@@ -38,13 +35,6 @@ class _WeakLabelInfo:
             # Infer the number of categories from the maximum value of polarities
             cardinality = max(self.polarities) + 1
         self.cardinality = cardinality
-
-        # Set names
-        if not names:
-            names = [f"weak_label_{i}" for i in range(len(self.polarities))]
-        # Converts arrays to lists
-        names = list(names)
-        self.names = names
 
         # Validate inputs work
         self.__validate_init__()
@@ -61,9 +51,6 @@ class _WeakLabelInfo:
         # Check no polarities outside of cardinality
         assert self.polarities.max() <= self.cardinality - 1
         assert self.polarities.min() >= 0
-
-        # Check names is the same size as polarities
-        assert len(self.names) == len(self.polarities)
 
     def _get_polarity_matrix(self):
         """Convert polarities to a binary matrix.
@@ -93,7 +80,7 @@ def multipolar_to_monopolar(
 
     Parameters
     ----------
-    L :
+    L : pd.DataFrame
         The input DataFrame of weak labels.
 
         Each column represents a weak labeler and each row represents a data point.
@@ -207,7 +194,7 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
 
     Parameters
     ----------
-    L:
+    L : pd.DataFrame
         Weak label DataFrame of shape (n_samples, n_weak).
 
     Returns
@@ -260,7 +247,7 @@ def filter_labeled(L: pd.DataFrame) -> pd.DataFrame:
 
     Parameters
     ----------
-    L:
+    L : pd.DataFrame
         Weak label DataFrame of shape (n_samples, n_weak).
 
     Returns
@@ -287,7 +274,7 @@ def coverage(L: pd.DataFrame) -> pd.Series:
 
     Parameters
     ----------
-    L:
+    L : pd.DataFrame
         Weak label DataFrame of shape (n_samples, n_weak).
 
     Returns
@@ -313,7 +300,7 @@ def confidence(L: pd.DataFrame) -> pd.Series:
 
     Parameters
     ----------
-    L:
+    L : pd.DataFrame
         Weak label DataFrame of shape (n_samples, n_weak)1.
 
     Returns
@@ -411,7 +398,7 @@ def summary(
 
     Parameters
     ----------
-    L:
+    L : pd.DataFrame
         Weak label DataFrame of shape (n_samples, n_weak).
     polarities:
         1D array or list of size n_weak containing the polarities of each weak label.

@@ -16,22 +16,19 @@ class _BaseModel(_WeakLabelInfo, ABC):
         self,
         polarities: ListLike,
         cardinality: int = 0,
-        names: ListLike = [],
     ):
         """
         Parameters
         ----------
         polarities:
-            List that maps weak labels to polarities, shape n_weak.
+            List that maps weak labels to polarities, size n_weak.
         cardinality:
             Number of possible label values.
 
             If unspecified, it will be inferred from the maximum value in polarities.
-        names:
-            List of names for the different weak labels, shape n_weak.
         """
         ABC.__init__(self)
-        _WeakLabelInfo.__init__(self, polarities, cardinality, names)
+        _WeakLabelInfo.__init__(self, polarities, cardinality)
 
     @abstractmethod
     def predict_proba(self, L: MatrixLike) -> np.ndarray:
@@ -77,7 +74,7 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
         Returns
         -------
-            1-D array of predicted labels of size `len(L)`
+            1-D array of predicted labels of size n_samples
         """
         proba = self.predict_proba(L)
         unlabeled = proba.sum(axis=1) == 0
@@ -199,7 +196,7 @@ class BalancedVoter(_BaseModel):
             for i in no_votes:
                 warnings.warn(
                     (
-                        f"No votes were given to {self.names[i]},"
+                        f"No votes were given to labeling function {i},"
                         "assuming its balance is correct which is likely wrong"
                     ),
                     UserWarning,

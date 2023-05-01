@@ -32,18 +32,26 @@ class SnorkelModel(nn.Module, _BaseModel):
         self,
         polarities: ListLike,
         cardinality: int = 0,
-        names: ListLike = [],
         class_balances: ListLike = [],
     ):
         """Initializes a SnorkelModel instance with the given configuration
         options.
 
-        {0}
-        """.format(
-            _BaseModel.__doc__
-        )
+        Parameters
+        ----------
+        polarities:
+            List that maps weak labels to polarities, size n_weak.
+        cardinality: int, optional
+            Number of possible label values.
+
+            If unspecified, it will be inferred from the maximum value in polarities.
+        class_balances: ListLike, optional
+            List specifying class balance prior for each possible class, size n_classes.
+
+            Defaults to balanced classes prior.
+        """
         nn.Module.__init__(self)
-        _BaseModel.__init__(self, polarities, cardinality, names)
+        _BaseModel.__init__(self, polarities, cardinality)
 
         self.Polarities = nn.Parameter(
             torch.Tensor(self.polarities_matrix), requires_grad=False
