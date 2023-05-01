@@ -50,7 +50,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         )
 
         if not class_balances:
-            class_balances = 1 / self.cardinality * np.ones(self.cardinality)
+            class_balances = 1 / self.cardinality * np.ones(int(self.cardinality))
         self.class_balances = class_balances
         self.Balances = nn.Parameter(torch.Tensor(class_balances), requires_grad=False)
 
@@ -68,7 +68,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         num_epochs: int = 100,
         prec_init: float = 0.7,
         weight_decay: float = 0,
-        k: int = 0,
+        k: float = 0,
         device: str = "cpu",
         verbose: bool = False,
         *_,
@@ -89,8 +89,11 @@ class SnorkelModel(nn.Module, _BaseModel):
             Can be of shape (n_weak) to set precision for each LF.
         weight_decay : float, optional, default: 0
             Weight decay (L2 penalty) for the optimizer
-        k : int, optional, default: 0
-            Weight of class blance loss term
+        k : float, optional, default: 0
+            Weight of class blance loss term.
+
+            This term penalizes the model for predicting a class on the train set
+            differently to its specified balance
         device : str, optional, default: "cpu"
             Device to use for training, either "cpu" or "cuda"
         verbose : bool, optional, default: False
@@ -129,9 +132,8 @@ class SnorkelModel(nn.Module, _BaseModel):
         self.mu = nn.Parameter(self.mu_init.clone())  # * np.random.random())
 
         # This will be changed when dealing with cliques the right way
-        mask = torch.ones(self.n_weak, self.n_weak)
-        mask = mask - torch.diag(torch.diag(mask))
-        mask = mask.bool()
+        mask_overlap = torch.ones(self.n_weak, self.n_weak).to(device).int()
+        mask_overlap = mask_overlap - torch.diag(torch.diag(mask_overlap))
 
         optimizer = optim.SGD(
             [x for x in self.parameters() if x.requires_grad],
@@ -153,7 +155,7 @@ class SnorkelModel(nn.Module, _BaseModel):
             # Forward
             # Calculate loss
             loss_overlap = torch.norm(
-                (Overlaps - (self.mu * self.Balances) @ self.mu.t())[mask]
+                (Overlaps - (self.mu * self.Balances) @ self.mu.t())[mask_overlap]
             )
 
             # mu * class_balance = precision * coverage

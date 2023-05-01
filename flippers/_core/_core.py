@@ -185,6 +185,32 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
     return L.sum(axis=1) > 0
 
 
+def total_coverage(L: pd.DataFrame) -> float:
+    """
+    Calculate the total proportion of labeled samples in the given label matrix.
+
+    Parameters
+    ----------
+    L : pd.DataFrame
+        Weak label DataFrame of shape (n_samples, n_weak).
+
+    Returns
+    -------
+    float
+        Total coverage, ranging from 0 to 1, indicating the proportion of
+        labeled samples in the label matrix.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.total_coverage(L)
+    0.75
+    """
+    return is_labeled(L).mean()
+
+
 def filter_labeled(L: pd.DataFrame) -> pd.DataFrame:
     """Filter out unlabeled samples from the given label matrix.
 
@@ -232,7 +258,7 @@ def confidence(L: pd.DataFrame) -> pd.Series:
     return L[L > 0].mean()
 
 
-def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.DataFrame:
+def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Series:
     """Calculate the number of overlaps for each sample and weak label.
 
     Parameters
@@ -241,7 +267,7 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Dat
         Weak label DataFrame of shape (n_samples, n_weak).
     polarities : Union[list, np.ndarray]
         Array or list of size n_weak containing the polarity of each weak label.
-    sign : str, optional (default="all")
+    sign : str, optional (default="all", options "all", "match", "conflict")
         String specifying which overlaps to include. Valid values are:
 
         - "all" (default) to include both positive and negative overlaps,
@@ -252,9 +278,9 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Dat
 
     Returns
     -------
-    pd.DataFrame
-        DataFrame of shape (n_samples, n_weak) where the (i, j)-th element represents
-        the number of weak labels assigned to i that have an overlap with L[i,j].
+    pd.Series
+        Series of length n_weak indicating the fraction of
+        annotated samples with other annotations for each LF.
     """
     L_pd = pd.DataFrame(L)
     L = np.array(L)
