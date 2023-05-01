@@ -120,6 +120,38 @@ def multipolar_to_monopolar(
 
         The keys are the column names of the input and the values are lists of integers
         representing the possible polarities.
+
+    Example
+    -------
+    Its always better to use an hand written ``polairites_mapping``.
+    ``polarities_mapping`` lists possible polarities each labeling function can have.
+
+    >>> import pandas as pd
+    >>> import flippers
+    >>> multipolar = pd.DataFrame([[-1, 1, 2], [0, -1, 0], [-1, -1, 2]])
+    >>> polarities_mapping = {'0': [0], '1': [1], '2': [0, 2]}
+    >>> L, polarities, _ = flippers.multipolar_to_monopolar(
+                                                multipolar, polarities_mapping
+                                                )
+    >>> L
+       0  1  2__0  2__2
+    0  0  1     0     1
+    1  1  0     1     0
+    2  0  0     0     1
+
+    If you dont want to create the mapping, the function can infer one.
+    This is potentially breaking if multipolar does not contain all possible outputs.
+
+    >>> L, polarities, polarities_mapping = flippers.multipolar_to_monopolar(multipolar)
+    >>> L
+       0  1  2__0  2__2
+    0  0  1     0     1
+    1  1  0     1     0
+    2  0  0     0     1
+    >>> polarities # output L polarities
+    array([0, 1, 0, 2], dtype=int64)
+    >>> polarities_mapping # input multipolar polarities
+    {'0': [0], '1': [1], '2': [0, 2]}
     """
     L = pd.DataFrame(L)
 
@@ -181,6 +213,18 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
     Returns
     -------
     Series of size n_samples indicating whether a sample is labeled or not.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.is_labeled(L)
+    0     True
+    1     True
+    2    False
+    3     True
+    dtype: bool
     """
     return L.sum(axis=1) > 0
 
@@ -223,6 +267,16 @@ def filter_labeled(L: pd.DataFrame) -> pd.DataFrame:
     -------
     Returns a filtered label matrix of shape (n_labeled_samples, n_weak).
     Sliced on the condition that the first one is labeled.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.filter_labeled(L)
+       0  1  2
+    0  0  1  0
+    2  1  0  1
     """
     labeled = is_labeled(L)
     return L.loc[labeled]
@@ -239,6 +293,17 @@ def coverage(L: pd.DataFrame) -> pd.Series:
     Returns
     -------
     Series of size n_weak with average of samples labeled per weak labeler.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.coverage(L)
+    0    0.5
+    1    0.5
+    2    0.5
+    dtype: float64
     """
     return (L > 0).mean()
 
@@ -254,6 +319,17 @@ def confidence(L: pd.DataFrame) -> pd.Series:
     Returns
     -------
     Series of size n_weak with average confidence level per weak labeler.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, .1, 0], [1, 0, .5], [0, 0, 0], [.7, .1, .2]])
+    >>> flippers.confidence(L)
+    0    0.85
+    1    0.10
+    2    0.35
+    dtype: float64
     """
     return L[L > 0].mean()
 
@@ -281,6 +357,30 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Ser
     pd.Series
         Series of length n_weak indicating the fraction of
         annotated samples with other annotations for each LF.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> # All overlaps
+    >>> flippers.overlaps(L, polarities)
+    0    0.50
+    1    0.25
+    2    0.50
+    dtype: float64
+    >>> # Only overlaps with matching assigned label
+    >>> flippers.overlaps(L, polarities, sign="match")
+    0    0.00
+    1    0.25
+    2    0.25
+    dtype: float64
+    >>> # Only overlaps with conflicting assigned label
+    >>> flippers.overlaps(L, polarities, sign="conflict")
+    0    0.50
+    1    0.25
+    2    0.50
+    dtype: float64
     """
     L_pd = pd.DataFrame(L)
     L = np.array(L)
@@ -329,6 +429,23 @@ def summary(
         - "overlaps": The ratio of assigned labels that have overlapping labels.
         - "matched": The ratio of assigned labels that have other matching labels.
         - "conflicted": The ratio of assigned labels that have conflicting labels.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> polarities = [0, 1, 1]
+    >>> flippers.summary(L, polarities)
+        polarity  coverage  confidence  overlaps  matched  conflicted
+    0         0       0.5         1.0      0.50     0.00        0.50
+    1         1       0.5         1.0      0.25     0.25        0.25
+    2         1       0.5         1.0      0.50     0.25        0.50
+    >>> flippers.summary(L, polarities, normalize=True)
+        polarity  coverage  confidence  overlaps  matched  conflicted
+    0         0       0.5         1.0       1.0      0.0         1.0
+    1         1       0.5         1.0       0.5      0.5         0.5
+    2         1       0.5         1.0       1.0      0.5         1.0
     """
     L = pd.DataFrame(L)
 
