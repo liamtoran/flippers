@@ -49,6 +49,13 @@ class SnorkelModel(nn.Module, _BaseModel):
             List specifying class balance prior for each possible class, size n_classes.
 
             Defaults to balanced classes prior.
+
+        Example
+        -------
+        >>> polarities = [1, 0, 1, 1]
+        >>> cardinality = 2
+        >>> class_balances = [0.7, 0.3]
+        >>> snorkel_model = SnorkelModel(polarities, cardinality, class_balances)
         """
         nn.Module.__init__(self)
         _BaseModel.__init__(self, polarities, cardinality)
@@ -73,7 +80,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         self,
         L: MatrixLike,
         learning_rate: float = 1e-3,
-        num_epochs: int = 100,
+        num_epochs: int = 50,
         prec_init: float = 0.7,
         weight_decay: float = 0,
         k: float = 0,
@@ -89,7 +96,7 @@ class SnorkelModel(nn.Module, _BaseModel):
             Weak Label matrix of shape (num_samples, n_weak)
         learning_rate : float, optional, default: 1e-3
             Learning rate for the optimizer.
-        num_epochs : int, optional, default: 100
+        num_epochs : int, optional, default: 50
             Number of epochs to train the model
         prec_init : float, optional, default: 0.7
             Initial value for precision
@@ -110,7 +117,25 @@ class SnorkelModel(nn.Module, _BaseModel):
         Returns
         -------
         None
+
+        Example
+        -------
+        >>> L = [
+        ...     [1, 0, 1, 1],
+        ...     [0, 1, 0, 1],
+        ...     [1, 0, 1, 0]
+        ... ]
+        >>> snorkel_model.fit(
+        ...     L,
+        ...     learning_rate=1e-2,
+        ...     num_epochs=10,
+        ...     prec_init=0.7,
+        ...     k=5e-3,
+        ...     device="cpu",
+        ...     verbose=True
+        ... )
         """
+
         self.to(device)
 
         self.num_samples = len(L)
@@ -189,6 +214,7 @@ class SnorkelModel(nn.Module, _BaseModel):
             optimizer.step()
 
             # Scheduler step
+            # TODO
 
         # Clamp mu
         self.mu.data = self.mu.clamp(1e-6, 1 - 1e-6)
@@ -225,13 +251,27 @@ class SnorkelModel(nn.Module, _BaseModel):
             Weak Label matrix
         ignore_abstains : bool, optional
             Whether to ignore abstains in the prior update:
+
+            - False (default), using both votes and abstains. This helps leveraging
+            information gained from knowing which labeling function abstained.
+
             - True, updates prior only using non abstained votes
-            - False (default), using both votes and abstains.
+
 
         Returns
         -------
         numpy.ndarray
             An array of predicted probabilities of shape (num_samples, num_classes).
+
+        Example
+        -------
+        >>> L = [
+        ...     [1, 0, 1, 1],
+        ...     [0, 1, 0, 1],
+        ...     [1, 0, 1, 0]
+        ... ]
+        >>> proba = snorkel_model.predict_proba(L)
+        >>> # proba.shape = (len(L), cardinality)
         """
         L = self._convert_L(L).float()
 

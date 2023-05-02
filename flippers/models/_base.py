@@ -1,5 +1,6 @@
 """Groups basic generative models."""
 
+import pickle
 import warnings
 from abc import ABC, abstractmethod
 
@@ -26,9 +27,52 @@ class _BaseModel(_WeakLabelInfo, ABC):
             Number of possible label values.
 
             If unspecified, it will be inferred from the maximum value in polarities.
+
+        Example
+        -------
+        >>> polarities = [1, 0, 1, 1]
+        >>> cardinality = 2
+        >>> model = ModelClass(polarities, cardinality)
         """
         ABC.__init__(self)
         _WeakLabelInfo.__init__(self, polarities, cardinality)
+
+    def save(self, filepath):
+        """Save the model to a file.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the file where the model will be saved.
+
+        Example
+        -------
+        >>> model.save("label_model.pkl")
+        """
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, filepath):
+        """Load a saved model from a file.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the file containing the saved model.
+
+        Returns
+        -------
+        model :
+            The loaded model object.
+
+        Example
+        -------
+        >>> model = ModelClass.load("label_model.pkl")
+        """
+        with open(filepath, "rb") as file:
+            model = pickle.load(file)
+        return model
 
     @abstractmethod
     def predict_proba(self, L: MatrixLike) -> np.ndarray:
@@ -44,6 +88,13 @@ class _BaseModel(_WeakLabelInfo, ABC):
         Returns
         -------
             Array of predicted probabilities of shape (len(L), cardinality)
+
+
+        Example
+        -------
+        >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
+        >>> proba = base_model.predict_proba(L)
+        >>> # proba.shape = (len(L), cardinality)
         """
         pass
 
@@ -75,6 +126,12 @@ class _BaseModel(_WeakLabelInfo, ABC):
         Returns
         -------
             1-D array of predicted labels of size n_samples
+
+        Example
+        -------
+        >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
+        >>> predictions = base_model.predict(L)
+        >>> # predictions.shape = (len(L),)
         """
         proba = self.predict_proba(L)
         unlabeled = proba.sum(axis=1) == 0
@@ -148,8 +205,13 @@ class Voter(_BaseModel):
         Returns
         -------
             Array of predicted probabilities of shape (len(L), cardinality)
-        """
 
+        Example
+        -------
+        >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
+        >>> predictions = base_model.predict(L)
+        >>> # predictions.shape = (len(L),)
+        """
         votes = self._get_votes(L)
         proba = self._normalize_preds(votes)
         return proba
@@ -174,6 +236,13 @@ class BalancedVoter(_BaseModel):
             Numpy array of shape cardinality giving a weight to each class.
 
             By default, assumes all classes are equally likely.
+
+
+        Example
+        -------
+        >>> L = [[1, 0, 1, 2], [0, 1, 2, 1], [1, 2, 1, 0], [0, 1, 0, 2]]
+        >>> class_balances = [0.6, 0.4]
+        >>> base_model.fit(L, class_balances)
         """
         if not class_balances:
             class_balances = np.ones(self.cardinality)
@@ -216,6 +285,12 @@ class BalancedVoter(_BaseModel):
         Returns
         -------
             Array of predicted probabilities of shape (len(L), cardinality)
+
+        Example
+        -------
+        >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
+        >>> predictions = base_model.predict(L)
+        >>> # predictions.shape = (len(L),)
         """
         votes = self._get_votes(L)
         weighted_votes = votes * self.votes_weights
