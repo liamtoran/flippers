@@ -209,8 +209,8 @@ class Voter(_BaseModel):
         Example
         -------
         >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
-        >>> predictions = base_model.predict(L)
-        >>> # predictions.shape = (len(L),)
+        >>> proba = snorkel_model.predict_proba(L)
+        >>> # proba.shape = (len(L), cardinality)
         """
         votes = self._get_votes(L)
         proba = self._normalize_preds(votes)
@@ -289,8 +289,8 @@ class BalancedVoter(_BaseModel):
         Example
         -------
         >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
-        >>> predictions = base_model.predict(L)
-        >>> # predictions.shape = (len(L),)
+        >>> proba = snorkel_model.predict_proba(L)
+        >>> # proba.shape = (len(L), cardinality)
         """
         votes = self._get_votes(L)
         weighted_votes = votes * self.votes_weights
