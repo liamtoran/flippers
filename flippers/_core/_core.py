@@ -321,7 +321,9 @@ def confidence(L: pd.DataFrame) -> pd.Series:
     return L[L > 0].mean()
 
 
-def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Series:
+def _overlaps(
+    L: pd.DataFrame, polarities: ListLike = [], sign: str = "overlaps"
+) -> pd.Series:
     """Calculate the number of overlaps for each sample and weak label.
 
     Parameters
@@ -330,14 +332,16 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Ser
         Weak label DataFrame of shape (n_samples, n_weak).
     polarities : Union[list, np.ndarray]
         Array or list of size n_weak containing the polarity of each weak label.
-    sign : str, optional (default="all", options "all", "match", "conflict")
+
+        Optional if sign="overlaps".
+    sign : str, optional (default="all", options "overlaps", "matches", "conflicts")
         String specifying which overlaps to include. Valid values are:
 
-        - "all" (default) to include both positive and negative overlaps,
+        - "overlaps" (default) to include both positive and negative overlaps,
 
-        - "match" to include matching overlaps only,
+        - "matches" to include matching overlaps only,
 
-        - "conflict" to include negative overlaps only.
+        - "conflicts" to include negative overlaps only.
 
     Returns
     -------
@@ -351,42 +355,144 @@ def overlaps(L: pd.DataFrame, polarities: ListLike, sign: str = "all") -> pd.Ser
     >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> # All overlaps
-    >>> flippers.overlaps(L, polarities)
+    >>> flippers._overlaps(L)
     0    0.50
     1    0.25
     2    0.50
     dtype: float64
     >>> # Only overlaps with matching assigned label
-    >>> flippers.overlaps(L, polarities, sign="match")
+    >>> flippers._overlaps(L, polarities, sign="matches")
     0    0.00
     1    0.25
     2    0.25
     dtype: float64
     >>> # Only overlaps with conflicting assigned label
-    >>> flippers.overlaps(L, polarities, sign="conflict")
+    >>> flippers._overlaps(L, polarities, sign="conflicts")
     0    0.50
     1    0.25
     2    0.50
     dtype: float64
     """
-    L_pd = pd.DataFrame(L)
+    names = pd.DataFrame(L).columns
     L = np.array(L)
 
-    mask = _WeakLabelInfo(polarities).overlap_matrix
-    match_overlap = L @ mask * L - L
     all_overlap = L.sum(axis=1).reshape(-1, 1) * L - L
-    if sign == "match":
-        overlap = match_overlap
-    if sign == "all":
+    if sign == "overlaps":
         overlap = all_overlap
-    elif sign == "conflict":
+    else:
+        mask = _WeakLabelInfo(polarities).overlap_matrix
+        match_overlap = L @ mask * L - L
+    if sign == "matches":
+        overlap = match_overlap
+    elif sign == "conflicts":
         overlap = all_overlap - match_overlap
 
     overlap = overlap > 0
     overlap = overlap.sum(axis=0)
     overlap = overlap / len(L)
 
-    overlap = pd.Series(overlap, index=L_pd.columns)
+    overlap = pd.Series(overlap, index=names)
+    return overlap  # type: ignore
+
+
+def overlaps(
+    L: pd.DataFrame,
+) -> pd.Series:
+    """Calculate the number of fraction of labeled samples labeled by other
+    labeling functions for each labeling function.
+
+    Parameters
+    ----------
+    L : pd.DataFrame
+        Weak label DataFrame of shape (n_samples, n_weak).
+
+    Returns
+    -------
+    pd.Series
+        Series of length n_weak indicating the fraction of
+        annotated samples with other annotations for each LF.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.overlap(L)
+    0    0.50
+    1    0.25
+    2    0.50
+    dtype: float64
+    """
+    overlap = _overlaps(L)
+    return overlap  # type: ignore
+
+
+def conflicts(L: pd.DataFrame, polarities: ListLike) -> pd.Series:
+    """Calculate the number of fraction of labeled samples labeled differently
+    by other labeling functions for each labeling function.
+
+    Parameters
+    ----------
+    L : pd.DataFrame
+        Weak label DataFrame of shape (n_samples, n_weak).
+
+    Parameters
+    ----------
+    L : pd.DataFrame
+        Weak label DataFrame of shape (n_samples, n_weak).
+    polarities : Union[list, np.ndarray]
+        Array or list of size n_weak containing the polarity of each weak label.
+
+    Returns
+    -------
+    pd.Series
+        Series of length n_weak indicating the fraction of
+        annotated samples with conflicting annotations for each LF.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.conflicts(L, polarities)
+    0    0.50
+    1    0.25
+    2    0.50
+    dtype: float64
+    """
+    overlap = _overlaps(L, polarities, sign="conflicts")
+    return overlap  # type: ignore
+
+
+def matches(L: pd.DataFrame, polarities: ListLike) -> pd.Series:
+    """Calculate the number of fraction of labeled samples labeled similarly by
+    other labeling functions for each labeling function.
+
+    Parameters
+    ----------
+    L : pd.DataFrame
+        Weak label DataFrame of shape (n_samples, n_weak).
+    polarities : Union[list, np.ndarray]
+        Array or list of size n_weak containing the polarity of each weak label.
+
+    Returns
+    -------
+    pd.Series
+        Series of length n_weak indicating the fraction of
+        annotated samples with matching annotations for each LF.
+
+    Example
+    -------
+    >>> import pandas as pd
+    >>> import flippers
+    >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
+    >>> flippers.matches(L, polarities)
+    0    0.00
+    1    0.25
+    2    0.25
+    dtype: float64
+    """
+    overlap = _overlaps(L, polarities, sign="matches")
     return overlap  # type: ignore
 
 
@@ -405,7 +511,7 @@ def summary(
     digits:
         Number of digits to round the output statistics to. Default 3.
     normalize:
-        When True, shows overlaps/matched/conflicted as a ratio of coverage.
+        When True, shows overlaps/matches/conflicts as a ratio of coverage.
 
     Returns
     -------
@@ -414,8 +520,8 @@ def summary(
         - "coverage": The average ratio of samples that are assigned each weak label.
         - "confidence": The average confidence level of the assigned weak labels.
         - "overlaps": The ratio of assigned labels that have overlapping labels.
-        - "matched": The ratio of assigned labels that have other matching labels.
-        - "conflicted": The ratio of assigned labels that have conflicting labels.
+        - "matches": The ratio of assigned labels that have other matching labels.
+        - "conflicts": The ratio of assigned labels that have conflicting labels.
 
     Example
     -------
@@ -424,12 +530,12 @@ def summary(
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> polarities = [0, 1, 1]
     >>> flippers.summary(L, polarities)
-        polarity  coverage  confidence  overlaps  matched  conflicted
+        polarity  coverage  confidence  overlaps  matches  conflicts
     0         0       0.5         1.0      0.50     0.00        0.50
     1         1       0.5         1.0      0.25     0.25        0.25
     2         1       0.5         1.0      0.50     0.25        0.50
     >>> flippers.summary(L, polarities, normalize=True)
-        polarity  coverage  confidence  overlaps  matched  conflicted
+        polarity  coverage  confidence  overlaps  matches  conflicts
     0         0       0.5         1.0       1.0      0.0         1.0
     1         1       0.5         1.0       0.5      0.5         0.5
     2         1       0.5         1.0       1.0      0.5         1.0
@@ -440,13 +546,13 @@ def summary(
     descriptions["polarity"] = polarities
     descriptions["coverage"] = coverage(L)
     descriptions["confidence"] = confidence(L)
-    descriptions["overlaps"] = overlaps(L, polarities, sign="all")
-    descriptions["matched"] = overlaps(L, polarities, sign="match")
-    descriptions["conflicted"] = overlaps(L, polarities, sign="conflict")
+    descriptions["overlaps"] = overlaps(L)
+    descriptions["matches"] = matches(L, polarities)
+    descriptions["conflicts"] = conflicts(L, polarities)
     if normalize:
         descriptions["overlaps"] /= descriptions["coverage"]
-        descriptions["matched"] /= descriptions["coverage"]
-        descriptions["conflicted"] /= descriptions["coverage"]
+        descriptions["matches"] /= descriptions["coverage"]
+        descriptions["conflicts"] /= descriptions["coverage"]
     descriptions = descriptions.round(digits)
 
     return descriptions
@@ -477,6 +583,6 @@ assert summary(
     "coverage": {0: 0.214, 1: 0.5, 2: 0.214, 3: 0.714},
     "confidence": {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0},
     "overlaps": {0: 0.214, 1: 0.429, 2: 0.071, 3: 0.429},
-    "matched": {0: 0.143, 1: 0.0, 2: 0.0, 3: 0.143},
-    "conflicted": {0: 0.214, 1: 0.429, 2: 0.071, 3: 0.429},
+    "matches": {0: 0.143, 1: 0.0, 2: 0.0, 3: 0.143},
+    "conflicts": {0: 0.214, 1: 0.429, 2: 0.071, 3: 0.429},
 }
