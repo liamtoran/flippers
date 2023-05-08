@@ -167,6 +167,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         # This will be changed when dealing with cliques the right way
         mask_overlap = torch.ones(self.n_weak, self.n_weak).to(device).int()
         mask_overlap = mask_overlap - torch.diag(torch.diag(mask_overlap))
+        mask_overlap = mask_overlap.bool()
 
         optimizer = optim.SGD(
             [x for x in self.parameters() if x.requires_grad],
