@@ -56,6 +56,8 @@ class SnorkelModel(nn.Module, _BaseModel):
         >>> cardinality = 2
         >>> class_balances = [0.7, 0.3]
         >>> snorkel_model = SnorkelModel(polarities, cardinality, class_balances)
+        >>> # Change device
+        >>> snorkel_model.to("cuda")
         """
         nn.Module.__init__(self)
         _BaseModel.__init__(self, polarities, cardinality)
@@ -68,6 +70,10 @@ class SnorkelModel(nn.Module, _BaseModel):
             class_balances = 1 / self.cardinality * np.ones(int(self.cardinality))
         self.class_balances = class_balances
         self.Balances = nn.Parameter(torch.Tensor(class_balances), requires_grad=False)
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def _convert_L(self, L: MatrixLike) -> torch.Tensor:
         """Convert input L to binary tensor."""
@@ -84,7 +90,6 @@ class SnorkelModel(nn.Module, _BaseModel):
         prec_init: float = 0.7,
         weight_decay: float = 0,
         k: float = 0,
-        device: str = "cpu",
         verbose: bool = False,
         *_,
     ) -> None:
@@ -109,8 +114,6 @@ class SnorkelModel(nn.Module, _BaseModel):
 
             This term penalizes the model for predicting a class on the train set
             differently to its specified balance
-        device : str, optional, default: "cpu"
-            Device to use for training, either "cpu" or "cuda"
         verbose : bool, optional, default: False
             If True, displays training progress
 
@@ -131,12 +134,9 @@ class SnorkelModel(nn.Module, _BaseModel):
         ...     num_epochs=10,
         ...     prec_init=0.7,
         ...     k=5e-3,
-        ...     device="cpu",
         ...     verbose=True
         ... )
         """
-
-        self.to(device)
 
         self.num_samples = len(L)
         self.num_epochs = num_epochs
@@ -146,16 +146,16 @@ class SnorkelModel(nn.Module, _BaseModel):
 
         # Deal with multiple types
         self.prec_init = prec_init
-        self.Prec_init = torch.ones(self.n_weak).to(device) * prec_init
+        self.Prec_init = torch.ones(self.n_weak).to(self.device) * prec_init
 
         # Convert L to binary tensor
         L = self._convert_L(L)
-        L = L.to(device)
+        L = L.to(self.device)
 
         # Gram matrix of L gives overlaps
         Overlaps = L.T @ L / self.num_samples
         Coverage = torch.diag(Overlaps)  # Overlaps with itself = coverage
-        Overlaps, Coverage = Overlaps.to(device), Coverage.to(device)
+        Overlaps, Coverage = Overlaps.to(self.device), Coverage.to(self.device)
 
         # mu(i, j) = P(L_i = 1 | Y = j)
         # Bayes theorem
@@ -165,15 +165,14 @@ class SnorkelModel(nn.Module, _BaseModel):
         self.mu = nn.Parameter(self.mu_init.clone())  # * np.random.random())
 
         # This will be changed when dealing with cliques the right way
-        mask_overlap = torch.ones(self.n_weak, self.n_weak).to(device).int()
+        mask_overlap = torch.ones(self.n_weak, self.n_weak).to(self.device).int()
         mask_overlap = mask_overlap - torch.diag(torch.diag(mask_overlap))
         mask_overlap = mask_overlap.bool()
 
-        optimizer = optim.SGD(
+        optimizer = optim.AdamW(
             [x for x in self.parameters() if x.requires_grad],
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
-            momentum=0,
         )
 
         if verbose:
