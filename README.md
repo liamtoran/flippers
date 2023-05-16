@@ -7,8 +7,6 @@
 ![Read the Docs](https://img.shields.io/readthedocs/flippers)
 ![GitHub](https://img.shields.io/github/license/liamtoran/flippers)
 
-(in construction)
-
 `flippers` is a Python library for weak supervision, which allows you to leverage your domain knowledge, heuristics and other weak supervision sources to generate high-quality labels for your training data. 
 
 # Features
@@ -49,7 +47,7 @@ If you have any questions or issues with `flippers`, please consult the [documen
 
 ## Contributing
 
-`flippers` is an open-source project, and contributions are welcome! If you would like to contribute to `flippers`, please read the `CONTRIBUTING.md` file for guidelines and instructions.
+`flippers` is an open-source project, and contributions are welcome!
 
 ## Related projects
 - [wrench](https://github.com/JieyuZ2/wrench): A weak supervision library created by for benchmarking label models and weak supervision techniques. `flippers` uses its list of datasets as benchmarks.  

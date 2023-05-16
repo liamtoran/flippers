@@ -70,6 +70,7 @@ class SnorkelModel(nn.Module, _BaseModel):
             class_balances = 1 / self.cardinality * np.ones(int(self.cardinality))
         self.class_balances = class_balances
         self.Balances = nn.Parameter(torch.Tensor(class_balances), requires_grad=False)
+        self.loss_history = []
 
     @property
     def device(self):
@@ -79,7 +80,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         """Convert input L to binary tensor."""
         L = np.array(L)
         L = L > 0.5
-        L = torch.tensor(L).to(torch.float)
+        L = torch.tensor(L).to(device=self.device, dtype=torch.float32)
         return L
 
     def fit(
@@ -115,7 +116,7 @@ class SnorkelModel(nn.Module, _BaseModel):
             This term penalizes the model for predicting a class on the train set
             differently to its specified balance
         verbose : bool, optional, default: False
-            If True, displays training progress
+            When True, displays training progress using tqdm.
 
         Returns
         -------
@@ -138,31 +139,30 @@ class SnorkelModel(nn.Module, _BaseModel):
         ... )
         """
 
-        self.num_samples = len(L)
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.loss_history = []
-
-        # Deal with multiple types
-        self.prec_init = prec_init
-        self.Prec_init = torch.ones(self.n_weak).to(self.device) * prec_init
+        eps = 1e-6
 
         # Convert L to binary tensor
         L = self._convert_L(L)
-        L = L.to(self.device)
 
         # Gram matrix of L gives overlaps
-        Overlaps = L.T @ L / self.num_samples
+        Overlaps = L.T @ L / len(L)
         Coverage = torch.diag(Overlaps)  # Overlaps with itself = coverage
         Overlaps, Coverage = Overlaps.to(self.device), Coverage.to(self.device)
 
         # mu(i, j) = P(L_i = 1 | Y = j)
         # Bayes theorem
-        self.mu_init = (
-            self.Polarities * (self.Prec_init * Coverage).view(-1, 1) / self.Balances
-        ).float()
-        self.mu = nn.Parameter(self.mu_init.clone())  # * np.random.random())
+        if not hasattr(self, "prec_init"):
+            self.prec_init = prec_init
+            self.Prec_init = torch.ones(self.n_weak).to(self.device) * prec_init
+            self.mu_init = (
+                self.Polarities
+                * (self.Prec_init * Coverage).view(-1, 1)
+                / self.Balances
+            ).float()
+            self.mu = nn.Parameter(self.mu_init.clone())  # * np.random.random())
 
         # This will be changed when dealing with cliques the right way
         mask_overlap = torch.ones(self.n_weak, self.n_weak).to(self.device).int()
@@ -183,20 +183,15 @@ class SnorkelModel(nn.Module, _BaseModel):
         for epoch in epoch_range:
             # Zero the gradients
             optimizer.zero_grad()
-            self.mu.data = self.mu.clamp(1e-6, 1 - 1e-6)
+            self.mu.data = self.mu.clamp(eps, 1 - eps)
 
             # Forward
-            # Calculate loss
             loss_overlap = torch.norm(
                 (Overlaps - (self.mu * self.Balances) @ self.mu.t())[mask_overlap]
             )
 
-            # mu * class_balance = precision * coverage
-            # so if for precision ~ 1, we want mu * class_balance - coverage ~ 0
-            # this term of the loss is trying to maximize the precision of
-            # the input weak labeler.
+            # coverage = mu @ class_balance by total law of probability
             loss_coverage = torch.norm(self.mu @ self.Balances - Coverage)
-
             loss = loss_overlap**2 + loss_coverage**2
             if k > 0:
                 loss_prediction = torch.norm(
@@ -207,24 +202,25 @@ class SnorkelModel(nn.Module, _BaseModel):
             # Backward
             loss.backward()
 
-            # Log loss_history
-            self.loss_history.append(loss.item())
-
             # Optimizer Step
             optimizer.step()
 
             # Scheduler step
             # TODO
 
-        # Clamp mu
-        self.mu.data = self.mu.clamp(1e-6, 1 - 1e-6)
+            # Log loss_history
+            self.loss_history.append(loss.item())
 
-        # Break permutation symetry in case class balance has non unique values
-        # TODO
+            if verbose and ((epoch % 50 == 0) or (epoch == self.num_epochs - 1)):
+                epoch_range.set_description(
+                    f"Epoch {epoch+1}/{self.num_epochs} | Loss {loss.item():.4f}"
+                )
+
+        # Clamp mu
+        self.mu.data = self.mu.clamp(eps, 1 - eps)
 
         # Eval mode so predict_proba doesnt calculate gradients
         self.eval()
-        self.to("cpu")
 
     def _predict_proba_tensor(
         self, L: torch.tensor, ignore_abstains: bool = False
@@ -273,7 +269,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         >>> proba = snorkel_model.predict_proba(L)
         >>> # proba.shape = (len(L), cardinality)
         """
-        L = self._convert_L(L).float()
+        L = self._convert_L(L)
 
         with torch.no_grad():
             Proba = self._predict_proba_tensor(L, ignore_abstains)

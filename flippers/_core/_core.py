@@ -213,6 +213,7 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
     3     True
     dtype: bool
     """
+    L = pd.DataFrame(L)
     return L.sum(axis=1) > 0
 
 
@@ -239,6 +240,7 @@ def total_coverage(L: pd.DataFrame) -> float:
     >>> flippers.total_coverage(L)
     0.75
     """
+    L = pd.DataFrame(L)
     return is_labeled(L).mean()
 
 
@@ -265,6 +267,7 @@ def filter_labeled(L: pd.DataFrame) -> pd.DataFrame:
     0  0  1  0
     2  1  0  1
     """
+    L = pd.DataFrame(L)
     labeled = is_labeled(L)
     return L.loc[labeled]
 
@@ -292,6 +295,7 @@ def coverage(L: pd.DataFrame) -> pd.Series:
     2    0.5
     dtype: float64
     """
+    L = pd.DataFrame(L)
     return (L > 0).mean()
 
 
@@ -318,6 +322,7 @@ def confidence(L: pd.DataFrame) -> pd.Series:
     2    0.35
     dtype: float64
     """
+    L = pd.DataFrame(L)
     return L[L > 0].mean()
 
 

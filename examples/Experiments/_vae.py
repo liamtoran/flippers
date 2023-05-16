@@ -7,12 +7,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from tqdm import trange
 
-from ...flippers._typing import ListLike, MatrixLike
-from ...flippers.models._base import _BaseModel
+from flippers._typing import ListLike, MatrixLike
+from flippers.models._base import _BaseModel
 
 
 class WeakLabelVAE(nn.Module, _BaseModel):
-    """A label model implementation for weak supervision based on a VAE"""
+    """A label model implementation for weak supervision based on a VAE."""
 
     def __init__(
         self,
@@ -59,9 +59,12 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         )
 
         self.decoder_mu = nn.Sequential(
-            nn.Linear(self.latent_dim + 1, self.n_weak, bias=False),
+            nn.Linear(self.latent_dim + 1, self.n_weak),
+            nn.ReLU(),
+            nn.Linear(self.n_weak, self.n_weak),
             nn.Sigmoid(),
         )
+        self.loss_history = []
 
     @property
     def device(self):
@@ -100,7 +103,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
             self.Polarities * y + (1 - self.Polarities) * (1 - y)
         ) * mu
 
-        return weak_reconstructed, mu_z, logvar_z, p
+        return weak_reconstructed.clamp(1e-8, 1 - 1e-8), mu_z, logvar_z, p
 
     def predict_proba(self, L):
         L = self._convert_L(L)
@@ -135,6 +138,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         kl_p = (p.mean() - self.class_balances[1]).pow(2).mean()
         kl_p -= (p - self.class_balances[1]).pow(2).mean() / 2
         kl_p *= L.shape[0]
+        # kl_p += -(p * torch.log(p) + (1 - p) * torch.log((1 - p))).sum() / 50
 
         return loss_L + kld_weight * kl_z + nudge * kl_p
 
@@ -208,8 +212,6 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         ...     verbose=True
         ... )
         """
-
-        self.loss_history = []
 
         # Convert L to binary tensor
         L = self._convert_L(L)

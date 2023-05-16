@@ -48,7 +48,7 @@ class MetricsUtil:
         predict_proba_args={},
     ):
         if y_pred is None:
-            y_pred = model.predict_proba(self.L, *predict_proba_args)[:, 1]
+            y_pred = model.predict_proba(self.L, **predict_proba_args)[:, 1]
 
             def fill_proba(proba):
                 proba = proba.copy()
