@@ -88,8 +88,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         L: MatrixLike,
         learning_rate: float = 1e-3,
         num_epochs: int = 50,
-        prec_init: float = 0.7,
-        weight_decay: float = 0,
+        prec_init: float = 0.5,
         k: float = 0,
         verbose: bool = False,
         *_,
@@ -104,12 +103,10 @@ class SnorkelModel(nn.Module, _BaseModel):
             Learning rate for the optimizer.
         num_epochs : int, optional, default: 50
             Number of epochs to train the model
-        prec_init : float, optional, default: 0.7
+        prec_init : float, optional, default: 0.5
             Initial value for precision
 
             Can be of shape (n_weak) to set precision for each LF.
-        weight_decay : float, optional, default: 0
-            Weight decay (L2 penalty) for the optimizer
         k : float, optional, default: 0
             Weight of class blance loss term.
 
@@ -141,7 +138,6 @@ class SnorkelModel(nn.Module, _BaseModel):
 
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
         eps = 1e-6
 
         # Convert L to binary tensor
@@ -168,12 +164,15 @@ class SnorkelModel(nn.Module, _BaseModel):
         mask_overlap = torch.ones(self.n_weak, self.n_weak).to(self.device).int()
         mask_overlap = mask_overlap - torch.diag(torch.diag(mask_overlap))
         mask_overlap = mask_overlap.bool()
+        Overlaps = Overlaps[mask_overlap]
 
-        optimizer = optim.AdamW(
+        optimizer = optim.Adam(
             [x for x in self.parameters() if x.requires_grad],
             lr=self.learning_rate,
-            weight_decay=self.weight_decay,
         )
+
+        def loss_fn(x, y):
+            return torch.norm(x - y) ** 2
 
         if verbose:
             epoch_range = trange(self.num_epochs)
@@ -185,19 +184,25 @@ class SnorkelModel(nn.Module, _BaseModel):
             optimizer.zero_grad()
             self.mu.data = self.mu.clamp(eps, 1 - eps)
 
-            # Forward
-            loss_overlap = torch.norm(
-                (Overlaps - (self.mu * self.Balances) @ self.mu.t())[mask_overlap]
-            )
+            # # Forward
 
+            # Overlap reconstruction loss
+            overlap_reconstructed = ((self.mu * self.Balances) @ self.mu.t())[
+                mask_overlap
+            ]
+            loss_overlap = loss_fn(overlap_reconstructed, Overlaps)
+
+            # Coverage reconstruction loss
             # coverage = mu @ class_balance by total law of probability
-            loss_coverage = torch.norm(self.mu @ self.Balances - Coverage)
-            loss = loss_overlap**2 + loss_coverage**2
+            loss_coverage = loss_fn(self.mu @ self.Balances, Coverage)
+
+            loss = loss_overlap + loss_coverage
             if k > 0:
-                loss_prediction = torch.norm(
-                    self.Balances - self._predict_proba_tensor(L).mean(0)
+                loss_prediction = loss_fn(
+                    self.Balances, self._predict_proba_tensor(L).mean(0)
                 )
-                loss = loss + k * loss_prediction**2
+
+                loss = loss + k * loss_prediction
 
             # Backward
             loss.backward()
