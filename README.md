@@ -1,4 +1,4 @@
-# flippers - A Weak Supervision Library 
+<img src="docs/flippers.png" width="250"/>
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/liamtoran/flippers)
 ![PyPI](https://img.shields.io/pypi/v/flippers)
