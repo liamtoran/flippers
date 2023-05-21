@@ -91,7 +91,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         prec_init: float = 0.5,
         k: float = 0,
         verbose: bool = False,
-        *_,
+        **_,
     ) -> None:
         """Train the Snorkel model on the given weak label matrix L.
 

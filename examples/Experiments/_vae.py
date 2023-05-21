@@ -18,7 +18,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         self,
         polarities: ListLike,
         class_balances: ListLike = [],
-        latent_dim: int = 0,
+        latent_dim: int = 2,
     ):
         """Initializes a SnorkelModel instance with the given configuration
         options.
@@ -162,14 +162,14 @@ class WeakLabelVAE(nn.Module, _BaseModel):
     def fit(
         self,
         L: MatrixLike,
-        learning_rate: float = 2e-3,
+        learning_rate: float = 5e-3,
         num_batches: int = 2500,
         batch_size: int = 32,
         weight_decay: float = 1e-3,
         kld_weight: float = 10,
-        nudge: float = 1.0,
+        nudge: float = 1e-1,
         verbose: bool = True,
-        *_,
+        **_,
     ) -> None:
         """Train the Snorkel model on the given weak label matrix L.
 
