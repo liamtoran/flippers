@@ -13,7 +13,7 @@
 `flippers` includes a number of features for weak supervision, including:
 - Simple tools to analyse your labeling functions,
 - Multiple label models including a from-scratch implementation of the label model used in the `snorkel` library and featuring enhanced ways to predict probabilities,
-- An extensive [documentation](https://flippers.readthedocs.io/en/latest/) with [tutorials](missing_link) and an [API reference](https://flippers.readthedocs.io/en/latest/reference/flippers.html).
+- An extensive [documentation](https://flippers.readthedocs.io/en/latest/) with [tutorials](https://github.com/liamtoran/flippers/examples) and an [API reference](https://flippers.readthedocs.io/en/latest/reference/flippers.html).
 
 # Installation
 To install the latest version of `flippers`, simply run:
@@ -24,7 +24,7 @@ pip install flippers
 
 # Quick Start 
 ## Documentation
-To quickly get started with `flippers`, you can begin by exploring the [documentation](https://flippers.readthedocs.io/en/latest/) and running through the [examples](missing_link) provided. The examples cover a variety of use cases and techniques, which can help you to get a feel for how to apply `flippers` to your own projects. 
+To quickly get started with `flippers`, you can begin by exploring the [documentation](https://flippers.readthedocs.io/en/latest/) and running through the [examples](https://github.com/liamtoran/flippers/examples) provided. The examples cover a variety of use cases and techniques, which can help you to get a feel for how to apply `flippers` to your own projects. 
 ## Example
 - Analyzing your labeling functions:
 ```python
