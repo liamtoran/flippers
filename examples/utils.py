@@ -28,6 +28,24 @@ def load_wrench_dataset(dataset):
     return (train, dev, test), (L_train, L_dev, L_test), polarities
 
 
+dataset_to_metric = {
+    "imdb": "Accuracy",
+    "yelp": "Accuracy",
+    "youtube": "Accuracy",
+    "sms": "F1",
+    "agnews": "Accuracy",
+    "trec": "Accuracy",
+    "spouse": "F1",
+    "cdr": "F1",
+    "semeval": "Accuracy",
+    "chemprot": "Accuracy",
+    "commercial": "F1",
+    "tennis": "F1",
+    "basketball": "F1",
+    "census": "F1",
+}
+
+
 class MetricsUtil:
     def __init__(
         self,

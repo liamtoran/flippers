@@ -65,6 +65,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
             nn.Sigmoid(),
         )
         self.loss_history = []
+        self.mu_bar = nn.Parameter(torch.zeros(self.n_weak), requires_grad=True)
 
     @property
     def device(self):
@@ -101,9 +102,10 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         mu = self.decoder_mu(latents)
         weak_reconstructed = (
             self.Polarities * y + (1 - self.Polarities) * (1 - y)
-        ) * mu
+        ) * mu + self.mu_bar
+        weak_reconstructed = weak_reconstructed.clamp(1e-8, 1 - 1e-8)
 
-        return weak_reconstructed.clamp(1e-8, 1 - 1e-8), mu_z, logvar_z, p
+        return weak_reconstructed, mu_z, logvar_z, p
 
     def predict_proba(self, L):
         L = self._convert_L(L)
@@ -160,11 +162,11 @@ class WeakLabelVAE(nn.Module, _BaseModel):
     def fit(
         self,
         L: MatrixLike,
-        learning_rate: float = 1e-3,
+        learning_rate: float = 2e-3,
         num_batches: int = 2500,
         batch_size: int = 32,
-        weight_decay: float = 1e-5,
-        kld_weight: float = 1.0,
+        weight_decay: float = 1e-3,
+        kld_weight: float = 10,
         nudge: float = 1.0,
         verbose: bool = True,
         *_,
@@ -177,7 +179,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
             Weak Label matrix of shape (num_samples, n_weak)
         learning_rate : float, optional, default: 1e-3
             Learning rate for the optimizer.
-        num_batches : int, optional, default: 50
+        num_batches : int, optional, default: 5000
             Number of batches to train the model
         weight_decay : float, optional, default: 0
             Weight decay (L2 penalty) for the optimizer
