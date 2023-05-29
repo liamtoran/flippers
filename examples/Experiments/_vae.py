@@ -18,7 +18,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         self,
         polarities: ListLike,
         class_balances: ListLike = [],
-        latent_dim: int = 2,
+        latent_dim: int = 4,
     ):
         """Initializes a SnorkelModel instance with the given configuration
         options.
@@ -53,9 +53,9 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         self.Balances = nn.Parameter(torch.Tensor(class_balances), requires_grad=False)
 
         self.encoder = nn.Sequential(
-            nn.Linear(self.n_weak, self.n_weak // 2),
+            nn.Linear(self.n_weak, self.n_weak),
             nn.ReLU(),
-            nn.Linear(self.n_weak // 2, 2 * self.latent_dim + 1),
+            nn.Linear(self.n_weak, 2 * self.latent_dim + 1),
         )
 
         self.decoder_mu = nn.Sequential(
@@ -123,7 +123,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
 
         return p
 
-    def loss(self, L, outputs, kld_weight=1.0, nudge=1.0):
+    def loss(self, L, outputs, kld_weight, nudge, capacity):
         L_reconstructed, mu_z, logvar_z, p = outputs
 
         loss_L = (
@@ -137,10 +137,11 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         # Nudge from 0.5
         # Force mean to be class balance
         p = torch.sigmoid(p)
-        kl_p = (p.mean() - self.class_balances[1]).pow(2).mean()
-        kl_p -= (p - self.class_balances[1]).pow(2).mean() / 2
-        kl_p *= L.shape[0]
-        # kl_p += -(p * torch.log(p) + (1 - p) * torch.log((1 - p))).sum() / 50
+        p_mean = p.mean(dim=0)
+        y = self.class_balances[1]
+        kl_p = y * torch.log(y / p_mean) + (1 - y) * torch.log((1 - y) / (1 - p_mean))
+        kl_p = (kl_p - capacity).relu()
+        kl_p = kl_p * L.shape[0]
 
         return loss_L + kld_weight * kl_z + nudge * kl_p
 
@@ -163,11 +164,12 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         self,
         L: MatrixLike,
         learning_rate: float = 5e-3,
-        num_batches: int = 2500,
+        num_batches: int = 5000,
         batch_size: int = 32,
         weight_decay: float = 1e-3,
-        kld_weight: float = 10,
-        nudge: float = 1e-1,
+        kld_weight: float = 1,
+        nudge: float = 1,
+        capacity=1e-1,
         verbose: bool = True,
         **_,
     ) -> None:
@@ -236,7 +238,13 @@ class WeakLabelVAE(nn.Module, _BaseModel):
                 batch_L = batch_L.to(self.device)
 
                 outputs = self(batch_L)
-                loss = self.loss(batch_L, outputs, kld_weight=kld_weight, nudge=nudge)
+                loss = self.loss(
+                    batch_L,
+                    outputs,
+                    kld_weight=kld_weight,
+                    nudge=nudge,
+                    capacity=capacity,
+                )
 
                 loss.backward()
                 optimizer.step()
