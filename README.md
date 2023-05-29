@@ -33,7 +33,7 @@ analysis = flippers.analyis(L_train)
 - Training a Label Model and doing inference:
 
 ```python
-label_model = flippers.models.SnorkelModel(polarities,  class_balances)
+label_model = flippers.models.SnorkelModel(polarities, class_balances)
 
 label_model.fit(L_train)
 
