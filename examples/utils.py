@@ -6,7 +6,7 @@ from sklearn.calibration import calibration_curve
 
 import flippers
 
-datasets = [
+binary_datasets = [
     "imdb",
     "yelp",
     "youtube",
@@ -36,6 +36,8 @@ dataset_to_metric = {
     "census": "F1",
 }
 
+datasets = list(dataset_to_metric.keys())
+
 
 # This helper loads any dataset in the wrench benchmarks
 # and creates monopolar label matrices from their multipolar data
@@ -59,13 +61,10 @@ def load_wrench_dataset(dataset):
 
 
 class MetricsUtil:
-    def __init__(
-        self,
-        y_true,
-        L=None,
-    ):
+    def __init__(self, y_true, L=None):
         self.L = L
         self.y_true = y_true
+        self.n_classes = len(np.unique(y_true))
         self.metrics = {}
 
     def score(
@@ -78,34 +77,50 @@ class MetricsUtil:
         predict_proba_args={},
     ):
         if y_pred is None:
-            y_pred = model.predict_proba(self.L, **predict_proba_args)[:, 1]
+            y_pred = model.predict_proba(self.L, **predict_proba_args)
+
+        if fill_proba:
 
             def fill_proba(proba):
                 proba = proba.copy()
                 proba[self.L.sum(axis=1) == 0] = 0
                 return proba
 
-            if fill_proba:
-                y_pred = fill_proba(y_pred)
+            y_pred = fill_proba(y_pred)
+        if self.n_classes == 2:
+            y_pred = y_pred[:, 1]
+            AP = metrics.average_precision_score(self.y_true, y_pred)
+            F1 = metrics.f1_score(self.y_true, y_pred.round())
+            AUC = metrics.roc_auc_score(self.y_true, y_pred)
+            Accuracy = metrics.accuracy_score(self.y_true, y_pred.round())
+            Balanced_Accuracy = metrics.balanced_accuracy_score(
+                self.y_true, y_pred.round()
+            )
+            M = {
+                "F1": F1,
+                "Average_Precision": AP,
+                "AUC": AUC,
+                "Accuracy": Accuracy,
+                "Balanced_Accuracy": Balanced_Accuracy,
+            }
         else:
-            y_pred = y_pred
+            M = {}
+            # for average in ["macro"]:
+            #     precision, recall, fscore, _ = precision_recall_fscore_support(
+            #         self.y_true, y_pred.argmax(axis=1), average=average
+            #     )
+            #     M[f"Precision_{average}"] = precision
+            #     M[f"Recall_{average}"] = recall
+            #     M[f"F1_{average}"] = fscore
+            M["Accuracy"] = metrics.accuracy_score(self.y_true, y_pred.argmax(axis=1))
+            M["Balanced_Accuracy"] = metrics.balanced_accuracy_score(
+                self.y_true, y_pred.argmax(axis=1)
+            )
 
-        AP = metrics.average_precision_score(self.y_true, y_pred)
-        F1 = metrics.f1_score(self.y_true, y_pred.round())
-        AUC = metrics.roc_auc_score(self.y_true, y_pred)
-        Accuracy = metrics.accuracy_score(self.y_true, y_pred.round())
-        Balanced_Accuracy = metrics.balanced_accuracy_score(self.y_true, y_pred.round())
-        M = {
-            "F1": F1,
-            "Average_Precision": AP,
-            "AUC": AUC,
-            "Accuracy": Accuracy,
-            "Balanced_Accuracy": Balanced_Accuracy,
-        }
         for key in M:
             M[key] = round(M[key], 3)
 
-        if plots:
+        if plots and self.n_classes == 2:
             fig, axs = plt.subplots(1, 2, figsize=(9, 4))
             plt.title(name)
 
