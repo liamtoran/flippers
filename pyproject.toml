@@ -10,17 +10,14 @@ requires-python = ">=3.7"
 license = "Apache-2.0"
 keywords = [
   "weak supervision",
+  "labeling",
+  "annotation",
   "data labeling",
   "data science",
   "machine learning",
-  "data engineering",
-  "data analysis",
-  "data wrangling",
-  "data cleaning",
-  "data preparation",
-  "data augmentation",
   "data",
 ]
+
 authors = [{ name = "Liam Toran", email = "liam.toran@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -43,6 +40,7 @@ Source = "https://github.com/liamtoran/flippers"
 path = "flippers/__about__.py"
 
 [tool.hatch.envs.default]
+python = "3.10"
 dependencies = [
   "pre-commit",
   "pre-commit-hooks",
@@ -50,7 +48,7 @@ dependencies = [
   "black[jupyter]",
   "isort",
   "jupyterlab",
-  "ray[tune]",
+  "ray[air,tune]",
   "snorkel",
   "jupyterlab-code-formatter",
   "ruff",
@@ -64,8 +62,8 @@ parallel = true
 omit = ["flippers/__about__.py"]
 
 # Linting and ruff
-
 [tool.hatch.envs.lint]
+python = "3.10"
 description = "Check and lint the codebase."
 dependencies = [
   "pre-commit",
@@ -81,7 +79,6 @@ run = ["black .", "isort .", "docformatter -i -r .", "ruff ."]
 
 
 # mypy checks
-
 [tool.hatch.envs.type]
 description = "Type check the codebase."
 dependencies = [
@@ -116,8 +113,10 @@ run = "mypy {args:--namespace-packages -p flippers}"
 [tool.coverage.report]
 exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
+# Documentation environment
 [tool.hatch.envs.docs]
 description = "Build the documentation."
+python = "3.10"
 dependencies = [
   "sphinx",
   "nbsphinx",

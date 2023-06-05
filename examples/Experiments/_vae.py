@@ -156,7 +156,9 @@ class WeakLabelVAE(nn.Module, _BaseModel):
             def __getitem__(self, idx):
                 return self.L[idx]
 
-        dataloader = DataLoader(CustomDataset(L), batch_size=batch_size, shuffle=True)
+        dataloader = DataLoader(
+            CustomDataset(L), batch_size=batch_size, shuffle=True, drop_last=True
+        )
 
         return dataloader
 
