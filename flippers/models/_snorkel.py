@@ -26,6 +26,19 @@ class SnorkelModel(nn.Module, _BaseModel):
 
     See the following link[] for more information on how to use this
     model and a comparison with the Snorkel library's implementation.
+
+    Example
+    -------
+
+    >>> from flippers.models import SnorkelModel
+    >>>
+    >>> # Create a SnorkelModel instance
+    >>> label_model = SnorkelModel(polarities, cardinality, class_balances)
+    >>> # Train the model
+    >>> label_model.fit(L_train)
+    >>> # Generate labels
+    >>> y_pred_proba = label_model.predict_proba(L) # shape: (len(L), n_classes)
+    >>> y_pred = label_model.predict(L) # shape: (len(L),)
     """
 
     def __init__(
@@ -55,9 +68,9 @@ class SnorkelModel(nn.Module, _BaseModel):
         >>> polarities = [1, 0, 1, 1]
         >>> cardinality = 2
         >>> class_balances = [0.7, 0.3]
-        >>> snorkel_model = SnorkelModel(polarities, cardinality, class_balances)
+        >>> label_model = SnorkelModel(polarities, cardinality, class_balances)
         >>> # Change device
-        >>> snorkel_model.to("cuda")
+        >>> label_model.to("cuda")
         """
         nn.Module.__init__(self)
         _BaseModel.__init__(self, polarities, cardinality)
@@ -126,7 +139,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         ...     [0, 1, 0, 1],
         ...     [1, 0, 1, 0]
         ... ]
-        >>> snorkel_model.fit(
+        >>> label_model.fit(
         ...     L,
         ...     learning_rate=1e-2,
         ...     num_epochs=10,
@@ -271,7 +284,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         ...     [0, 1, 0, 1],
         ...     [1, 0, 1, 0]
         ... ]
-        >>> proba = snorkel_model.predict_proba(L)
+        >>> proba = label_model.predict_proba(L)
         >>> # proba.shape = (len(L), cardinality)
         """
         L = self._convert_L(L)

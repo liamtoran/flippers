@@ -1,4 +1,4 @@
-"""Groups generative models."""
+"""Groups label generative models."""
 
 from ._base import BalancedVoter, Voter  # noqa: F403
 from ._snorkel import SnorkelModel
