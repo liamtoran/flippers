@@ -6,14 +6,14 @@ class LFS:
     """A container for managing labeling functions for data labeling.
 
     This class allows for the easy addition of labeling functions and
-    their associated polarities. It also provides functionality to
+    their associated polarities.
+
+    It also provides functionality to
     create a labeling matrix from a given DataFrame.
 
     Example
     -------
-    >>> from flippers.lfs import LFS
-    >>>
-    >>> lfs = LFS()
+    >>> lfs = flippers.lfs.LFS()
     >>>
     >>> # Add a labeling function with polarity 1
     >>> @lfs.add(polarity=1)
@@ -62,11 +62,13 @@ class LFS:
 
         Parameters
         ----------
-        df (pd.DataFrame): The DataFrame to label.
+        df : pd.DataFrame
+            Input dataframe.
 
         Returns
         -------
-        pd.DataFrame: The resulting labeling matrix as a DataFrame.
+        pd.DataFrame:
+            Labeling matrix.
 
         Example
         -------
