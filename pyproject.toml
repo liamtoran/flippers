@@ -126,7 +126,7 @@ dependencies = [
 ]
 
 [tool.hatch.envs.docs.scripts]
-clean = "bpwd; cd docs; ./Make.bat clean"
+clean = "cd docs; ./make.bat clean"
 
 [tool.ruff]
 line-length = 88
