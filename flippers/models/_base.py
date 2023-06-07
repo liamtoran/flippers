@@ -63,8 +63,7 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
         Returns
         -------
-        model :
-            The loaded model object.
+        The loaded model object.
 
         Example
         -------

@@ -113,8 +113,6 @@ def multipolar_to_monopolar(
     Its always better to use an hand written ``polairites_mapping``.
     ``polarities_mapping`` lists possible polarities each labeling function can have.
 
-    >>> import pandas as pd
-    >>> import flippers
     >>> multipolar = pd.DataFrame([[-1, 1, 2], [0, -1, 0], [-1, -1, 2]])
     >>> polarities_mapping = {'0': [0], '1': [1], '2': [0, 2]}
     >>> L, polarities, _ = flippers.multipolar_to_monopolar(
@@ -203,8 +201,6 @@ def is_labeled(L: pd.DataFrame) -> pd.Series:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.is_labeled(L)
     0     True
@@ -234,8 +230,6 @@ def total_coverage(L: pd.DataFrame) -> float:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.total_coverage(L)
     0.75
@@ -259,8 +253,6 @@ def filter_labeled(L: pd.DataFrame) -> pd.DataFrame:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.filter_labeled(L)
        0  1  2
@@ -286,8 +278,6 @@ def coverage(L: pd.DataFrame) -> pd.Series:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.coverage(L)
     0    0.5
@@ -313,8 +303,6 @@ def confidence(L: pd.DataFrame) -> pd.Series:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, .1, 0], [1, 0, .5], [0, 0, 0], [.7, .1, .2]])
     >>> flippers.confidence(L)
     0    0.85
@@ -356,8 +344,6 @@ def _overlaps(
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> # All overlaps
     >>> flippers._overlaps(L)
@@ -419,8 +405,6 @@ def overlaps(
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.overlap(L)
     0    0.50
@@ -456,8 +440,6 @@ def conflicts(L: pd.DataFrame, polarities: ListLike) -> pd.Series:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.conflicts(L, polarities)
     0    0.50
@@ -488,8 +470,6 @@ def matches(L: pd.DataFrame, polarities: ListLike) -> pd.Series:
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> flippers.matches(L, polarities)
     0    0.00
@@ -530,8 +510,6 @@ def summary(
 
     Example
     -------
-    >>> import pandas as pd
-    >>> import flippers
     >>> L = pd.DataFrame([[0, 1, 0], [1, 0, 1], [0, 0, 0], [1, 1, 1]])
     >>> polarities = [0, 1, 1]
     >>> flippers.summary(L, polarities)

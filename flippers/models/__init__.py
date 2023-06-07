@@ -1,6 +1,6 @@
-"""Groups generative models."""
+"""Groups label generative models."""
 
-from flippers.models._base import BalancedVoter, Voter  # noqa: F403
-from flippers.models._snorkel import SnorkelModel
+from ._base import BalancedVoter, Voter  # noqa: F403
+from ._snorkel import SnorkelModel
 
 __all__ = ["Voter", "BalancedVoter", "SnorkelModel"]

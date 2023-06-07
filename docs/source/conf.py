@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 project = "flippers"
 copyright = f"2023 - {datetime.now().year}, Liam Toran"
 author = "Liam Toran"
-release = "alpha"
+release = ""
 
 
 # -- General configuration ---------------------------------------------------
