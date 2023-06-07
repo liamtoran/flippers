@@ -1,4 +1,4 @@
-<img src="docs/source/flippers.png" width="255"/>
+<img src="https://raw.githubusercontent.com/liamtoran/flippers/main/docs/source/flippers.png" width="255"/>
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/liamtoran/flippers)
 ![PyPI](https://img.shields.io/pypi/v/flippers)
