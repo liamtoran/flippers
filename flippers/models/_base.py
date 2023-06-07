@@ -10,7 +10,7 @@ from .._core import _WeakLabelInfo
 from .._typing import ListLike, MatrixLike
 
 
-class _BaseModel(_WeakLabelInfo, ABC):
+class _Model(_WeakLabelInfo, ABC):
     """Create a Model object."""
 
     def __init__(
@@ -154,6 +154,19 @@ class _BaseModel(_WeakLabelInfo, ABC):
 
         return predictions
 
+
+class Voter(_Model):
+    """Basic model that bases its decisions on a sum of votes (optionally weighted)
+    for each class.
+
+    The weights are computed during fitting so the sum of votes over
+    training matches the given class balance.
+    """
+
+    def __init__(self, polarities: ListLike, cardinality: int = 0):
+        super().__init__(polarities, cardinality)
+        self.votes_weights = 1
+
     def _get_votes(self, L: MatrixLike) -> np.ndarray:
         """Compute the sum of votes for each label based on the given weak
         label matrix.
@@ -184,48 +197,14 @@ class _BaseModel(_WeakLabelInfo, ABC):
         proba = preds / row_wise_sum
         return proba
 
-
-class Voter(_BaseModel):
-    """Basic model that bases its decisions on the sum of votes for each
-    class."""
-
-    def fit(self) -> None:
-        """Voter model does not require fitting."""
-        warnings.warn("Voter object does not need to be fitted", category=UserWarning)
-
-    def predict_proba(self, L: MatrixLike) -> np.ndarray:
-        """Predict probabilities using sum of votes.
-
-        Parameters
-        ----------
-        L : pd.DataFrame
-            Weak label dataframe.
-
-        Returns
-        -------
-            Array of predicted probabilities of shape (len(L), cardinality)
-
-        Example
-        -------
-        >>> L = [[1, 0, 1, 2], [0, 1, 0, 0]]
-        >>> proba = snorkel_model.predict_proba(L)
-        >>> # proba.shape = (len(L), cardinality)
-        """
-        votes = self._get_votes(L)
-        proba = self._normalize_preds(votes)
-        return proba
-
-
-class BalancedVoter(_BaseModel):
-    """Basic model that bases its decisions on a weighted sum of votes for each
-    class.
-
-    The weights are computed during fitting so the sum of votes over
-    training matches the given class balance.
-    """
-
     def fit(self, L: MatrixLike, class_balances: ListLike = []) -> None:
-        """Fit the BalancedMajorityVoter model.
+        """Fit the Voter model. This computes the weights for each class.
+
+        Reweighing the votes help especially when specific classes have a
+        high overlap in their weak labels.
+
+        If you do not want the vote to be weighted (majority voote),
+        there is no need to call fit.
 
         Parameters
         ----------

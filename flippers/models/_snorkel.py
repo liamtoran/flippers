@@ -8,10 +8,10 @@ import torch.optim as optim
 from tqdm import trange
 
 from .._typing import ListLike, MatrixLike
-from ._base import _BaseModel
+from ._base import _Model
 
 
-class SnorkelModel(nn.Module, _BaseModel):
+class SnorkelModel(nn.Module, _Model):
     """A label model implementation for weak supervision based on a generative
     approach.
 
@@ -73,7 +73,7 @@ class SnorkelModel(nn.Module, _BaseModel):
         >>> label_model.to("cuda")
         """
         nn.Module.__init__(self)
-        _BaseModel.__init__(self, polarities, cardinality)
+        _Model.__init__(self, polarities, cardinality)
 
         self.Polarities = nn.Parameter(
             torch.Tensor(self.polarities_matrix), requires_grad=False

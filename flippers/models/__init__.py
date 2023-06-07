@@ -1,6 +1,6 @@
 """Groups label generative models."""
 
-from ._base import BalancedVoter, Voter  # noqa: F403
+from ._base import Voter
 from ._snorkel import SnorkelModel
 
-__all__ = ["Voter", "BalancedVoter", "SnorkelModel"]
+__all__ = ["Voter", "SnorkelModel"]

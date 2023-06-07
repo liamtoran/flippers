@@ -8,10 +8,10 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import trange
 
 from flippers._typing import ListLike, MatrixLike
-from flippers.models._base import _BaseModel
+from flippers.models._base import _Model
 
 
-class WeakLabelVAE(nn.Module, _BaseModel):
+class WeakLabelVAE(nn.Module, _Model):
     """A label model implementation for weak supervision based on a VAE."""
 
     def __init__(
@@ -41,7 +41,7 @@ class WeakLabelVAE(nn.Module, _BaseModel):
         """
         nn.Module.__init__(self)
         self.cardinality = 2
-        _BaseModel.__init__(self, polarities, self.cardinality)
+        _Model.__init__(self, polarities, self.cardinality)
 
         self.Polarities = nn.Parameter(torch.Tensor(polarities), requires_grad=False)
         self.n_weak = len(polarities)
