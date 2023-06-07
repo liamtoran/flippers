@@ -11,11 +11,12 @@ Welcome to flippers documentation!
 With flippers, you can leverage domain knowledge and heuristics
 to generate high-quality labels for your training data.
 
-flippers is built to be an alternative to the popular Snorkel library with the following goals:
+flippers is built to be an alternative to the archived Snorkel library with the following goals:
 - Lightweight and easy to use.
 - Fast and scalable.
 - Better accuracy and calibration of the label model.
 - Easy integratation with any machine learning pipeline.
+- Strong documentation and support.
 
 For more details, please refer to the following resources:
 
