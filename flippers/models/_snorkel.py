@@ -223,9 +223,6 @@ class SnorkelModel(nn.Module, _BaseModel):
             # Optimizer Step
             optimizer.step()
 
-            # Scheduler step
-            # TODO
-
             # Log loss_history
             self.loss_history.append(loss.item())
 
@@ -266,11 +263,11 @@ class SnorkelModel(nn.Module, _BaseModel):
         ignore_abstains : bool, optional
             Whether to ignore abstains in the prior update:
 
-            - False (default), using both votes and abstains. This helps leveraging
-            information gained from knowing which labeling function abstained.
+            $ When `False` (default), uses both votes and abstains. This is recommended
+            and helps leverage information gained from
+            knowing which labeling function abstained.
 
-            - True, updates prior only using non abstained votes
-
+            $ When `True`, updates prior only using non abstained.
 
         Returns
         -------

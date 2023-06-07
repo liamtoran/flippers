@@ -1,41 +1,27 @@
-.. flippers documentation master file, created by
-   sphinx-quickstart on Sun Mar 26 01:49:07 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. image:: ./flippers.png
+   :align: center
+   :width: 300
+   :alt: flippers logo.
 
-#######################
-flippers Documentation
-#######################
 
+Welcome to flippers documentation!
+===================================
+
+**flippers** is a Python library for weak supervision. 
+With flippers, you can leverage domain knowledge and heuristics
+to generate high-quality labels for your training data.
+
+flippers is built to be an alternative to the popular Snorkel library with the following goals:
+- Lightweight and easy to use.
+- Fast and scalable.
+- Better accuracy and calibration of the label model.
+- Easy integratation with any machine learning pipeline.
+
+For more details, please refer to the following resources:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-   pages/installation
-   pages/overview
-   pages/related
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Applications
-
-   apps/notebook
-   apps/console
-   apps/preview
-   apps/hub
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-   :hidden:
-
-   reference/flippers
-
-******************
-Indices and tables
-******************
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Quick Start <pages/quickstart>
+   API Reference <reference/flippers>

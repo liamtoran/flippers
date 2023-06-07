@@ -5,6 +5,7 @@
    :undoc-members:
    :inherited-members:
    :show-inheritance:
+   :noindex:
 
 
    {% block modules %}
