@@ -158,9 +158,6 @@ class _Model(_WeakLabelInfo, ABC):
 class Voter(_Model):
     """Basic model that bases its decisions on a sum of votes (optionally weighted)
     for each class.
-
-    The weights are computed during fitting so the sum of votes over
-    training matches the given class balance.
     """
 
     def __init__(self, polarities: ListLike, cardinality: int = 0):
@@ -203,17 +200,21 @@ class Voter(_Model):
         Reweighing the votes help especially when specific classes have a
         high overlap in their weak labels.
 
-        If you do not want the vote to be weighted (majority voote),
-        there is no need to call fit.
+        The weights are computed so the weighted sum of votes over
+        training matches the given class balance.
+
+        This guarantees mean(y_pred_proba_train) = class_balance.
+
+        For majority voting, do not use fit.
 
         Parameters
         ----------
-        L
+        L : pd.DataFrame
             Weak label dataframe.
-        class_balances
+        class_balances : ListLike
             Numpy array of shape cardinality giving a weight to each class.
 
-            By default, assumes all classes are equally likely.
+            When unspecified, assumes all classes are equally likely.
 
 
         Example
@@ -223,10 +224,8 @@ class Voter(_Model):
         >>> base_model.fit(L, class_balances)
         """
         if not class_balances:
-            class_balances = np.ones(self.cardinality)
-        class_balances = np.array(class_balances)
-        self.class_balances = class_balances
-        self.normalized_class_balances = self.class_balances / self.class_balances.sum()
+            class_balances = np.ones(self.cardinality) / self.cardinality
+        self.class_balances = np.array(class_balances)
 
         # Learn votes weights per class
         # vote weights is the factor that will reweigh the predicted probabilites
@@ -248,8 +247,8 @@ class Voter(_Model):
                     ),
                     UserWarning,
                 )
-            votes_mean[no_votes] = self.normalized_class_balances[no_votes]
-        votes_weights = self.normalized_class_balances / votes_mean
+            votes_mean[no_votes] = self.class_balances[no_votes]
+        votes_weights = self.class_balances / votes_mean
         self.votes_weights = votes_weights
 
     def predict_proba(self, L: MatrixLike) -> np.ndarray:
