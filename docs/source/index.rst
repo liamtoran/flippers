@@ -4,14 +4,15 @@
    :alt: flippers logo.
 
 
-Welcome to flippers documentation!
+Welcome to flippers!
 ===================================
 
 **flippers** is a Python library for weak supervision. 
-With flippers, you can leverage domain knowledge and heuristics
+With ``flippers``, you can leverage domain knowledge and heuristics
 to generate high-quality labels for your training data.
 
-flippers is built to be an alternative to the archived Snorkel library with the following goals:
+``flippers`` is built to be an alternative and improvement to the now archived ``Snorkel`` library with the following goals:
+
 - Lightweight and easy to use.
 - Fast and scalable.
 - Better accuracy and calibration of the label model.
