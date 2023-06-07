@@ -60,7 +60,7 @@ def load_wrench_dataset(dataset):
     return (train, dev, test), (L_train, L_dev, L_test), polarities
 
 
-class MetricsUtil:
+class MetricsMaker:
     def __init__(self, y_true, L=None):
         self.L = L
         self.y_true = y_true

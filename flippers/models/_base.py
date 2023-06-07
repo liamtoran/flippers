@@ -156,9 +156,8 @@ class _Model(_WeakLabelInfo, ABC):
 
 
 class Voter(_Model):
-    """Basic model that bases its decisions on a sum of votes (optionally weighted)
-    for each class.
-    """
+    """Basic model that bases its decisions on a sum of votes (optionally
+    weighted) for each class."""
 
     def __init__(self, polarities: ListLike, cardinality: int = 0):
         super().__init__(polarities, cardinality)
