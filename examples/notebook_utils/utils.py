@@ -88,7 +88,8 @@ class MetricsMaker:
 
             y_pred = fill_proba(y_pred)
         if self.n_classes == 2:
-            y_pred = y_pred[:, 1]
+            if y_pred.ndim == 2:
+                y_pred = y_pred[:, 1]
             AP = metrics.average_precision_score(self.y_true, y_pred)
             F1 = metrics.f1_score(self.y_true, y_pred.round())
             AUC = metrics.roc_auc_score(self.y_true, y_pred)

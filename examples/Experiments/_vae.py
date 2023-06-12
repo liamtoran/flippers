@@ -10,6 +10,8 @@ from tqdm import trange
 from flippers._typing import ListLike, MatrixLike
 from flippers.models._base import _Model
 
+torch.manual_seed(0)
+
 
 class WeakLabelVAE(nn.Module, _Model):
     """A label model implementation for weak supervision based on a VAE."""
@@ -58,14 +60,21 @@ class WeakLabelVAE(nn.Module, _Model):
             nn.Linear(self.n_weak, 2 * self.latent_dim + 1),
         )
 
-        self.decoder_mu = nn.Sequential(
+        self.decoder_mu_true = nn.Sequential(
             nn.Linear(self.latent_dim + 1, self.n_weak),
             nn.ReLU(),
             nn.Linear(self.n_weak, self.n_weak),
             nn.Sigmoid(),
         )
+
+        self.decoder_mu_false = nn.Sequential(
+            nn.Linear(self.latent_dim + 1, self.n_weak),
+            nn.ReLU(),
+            nn.Linear(self.n_weak, self.n_weak),
+            nn.Sigmoid(),
+        )
+
         self.loss_history = []
-        self.mu_bar = nn.Parameter(torch.zeros(self.n_weak), requires_grad=True)
 
     @property
     def device(self):
@@ -99,13 +108,17 @@ class WeakLabelVAE(nn.Module, _Model):
 
         latents = torch.cat((z, y), dim=1)
 
-        mu = self.decoder_mu(latents)
+        mu_true = self.decoder_mu_true(latents)
+        mu_false = self.decoder_mu_false(latents)
+
         weak_reconstructed = (
             self.Polarities * y + (1 - self.Polarities) * (1 - y)
-        ) * mu + self.mu_bar
+        ) * mu_true + (
+            (1 - self.Polarities) * (y) + (self.Polarities) * (1 - y)
+        ) * mu_false
         weak_reconstructed = weak_reconstructed.clamp(1e-8, 1 - 1e-8)
 
-        return weak_reconstructed, mu_z, logvar_z, p
+        return weak_reconstructed, mu_z, logvar_z, p, mu_true, mu_false
 
     def predict_proba(self, L):
         L = self._convert_L(L)
@@ -124,7 +137,7 @@ class WeakLabelVAE(nn.Module, _Model):
         return p
 
     def loss(self, L, outputs, kld_weight, nudge, capacity):
-        L_reconstructed, mu_z, logvar_z, p = outputs
+        L_reconstructed, mu_z, logvar_z, p, mu_true, mu_false = outputs
 
         loss_L = (
             nn.functional.binary_cross_entropy(L_reconstructed, L, reduction="none")
@@ -143,7 +156,12 @@ class WeakLabelVAE(nn.Module, _Model):
         kl_p = (kl_p - capacity).relu()
         kl_p = kl_p * L.shape[0]
 
-        return loss_L + kld_weight * kl_z + nudge * kl_p
+        # mu_false/mu_true should be small
+        mu_ratio = mu_false / mu_true
+        mu_ratio = mu_ratio.pow(2).mean(dim=1).sum()
+
+        loss = loss_L + kld_weight * kl_z + nudge * kl_p + mu_ratio
+        return loss
 
     def _get_dataloader(self, L, batch_size):
         class CustomDataset(Dataset):
@@ -165,12 +183,12 @@ class WeakLabelVAE(nn.Module, _Model):
     def fit(
         self,
         L: MatrixLike,
-        learning_rate: float = 5e-3,
+        learning_rate: float = 1e-3,
         num_batches: int = 5000,
         batch_size: int = 32,
         weight_decay: float = 1e-3,
-        kld_weight: float = 1,
-        nudge: float = 1,
+        kld_weight: float = 50,
+        nudge: float = 1e-1,
         capacity=1e-1,
         verbose: bool = True,
         **_,
@@ -261,3 +279,4 @@ class WeakLabelVAE(nn.Module, _Model):
                 self.loss_history.append(epoch_loss)
                 description["Loss"] = f"{epoch_loss:.1f}"
                 epoch_range.set_postfix(description)
+        self.eval()
