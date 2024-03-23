@@ -28,7 +28,7 @@ To quickly get started with `flippers`, you can begin by exploring the [document
 ## Example
 - Analyzing your labeling functions:
 ```python
-analysis = flippers.analyis(L_train)
+analysis = flippers.summary(L_train)
 ```
 - Training a Label Model and doing inference:
 
