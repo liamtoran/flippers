@@ -28,7 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
 ]
-dependencies = ["numpy", "pandas", "matplotlib", "scikit-learn", "tqdm"]
+dependencies = ["numpy", "pandas", "scikit-learn<1.4.0", "torch", "tqdm"]
 dynamic = ["version"]
 
 [project.urls]
@@ -46,8 +46,10 @@ dependencies = [
   "pre-commit-hooks",
   "docformatter",
   "black[jupyter]",
+  "ipywidgets",
   "isort",
   "jupyterlab",
+  "matplotlib",
   "ray[air,tune]",
   "snorkel",
   "jupyterlab-code-formatter",
